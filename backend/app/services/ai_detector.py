@@ -53,8 +53,8 @@ _tokenizer = None
 
 # Progi wyznaczone metodą ROC/Youden na korpusie n=50
 # Kalibracja v2, luty 2026, sdadas/polish-gpt2-small
-PERPLEXITY_AI_THRESHOLD    = 28.89  # poniżej → AI z wysoką pewnością
-PERPLEXITY_HUMAN_THRESHOLD = 37.04  # powyżej → human (optymalny próg Youdena)
+PERPLEXITY_AI_THRESHOLD    = 32.03
+PERPLEXITY_HUMAN_THRESHOLD = 41.0623
 
 
 def get_model_and_tokenizer():

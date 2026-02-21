@@ -25,7 +25,7 @@ from sklearn.metrics import (
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # ─── Ustawienia ───────────────────────────────────────────────
-CORPUS_PATH  = Path("corpus.csv")
+CORPUS_PATH  = Path("corpus_full.csv")
 OUTPUT_CSV   = Path("evaluation_results.csv")
 OUTPUT_JSON  = Path("evaluation_summary.json")
 OUTPUT_PLOT  = Path("roc_curve.png")

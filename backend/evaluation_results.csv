@@ -3,7 +3,7 @@ human,"Prus – Lalka t.1 (1890), rozdz. I",human,True,47.832,"W początkach rok
 human,"Prus – Lalka t.1 (1890), dialog w jadłodajni",human,True,41.6607,"— Zaczekaj pan — przerwał radca. — Przerzucił się, ale nie do galanterii, tylko "
 human,"Prus – Lalka t.2 (1890), Pamiętnik Rzeckiego",human,True,77.0122,"Sytuacja polityczna jest tak niepewna, że wcale by mnie nie zdziwiło, gdyby okoł"
 human,"Prus – Lalka t.2 (1890), Wokulski w pociągu",ai,False,28.2625,W kwadrans po wyjeździe z Warszawy koleją warszawsko-bydgoską Wokulski doznał dw
-human,"Prus – Faraon t.1 (1897), Wstęp",human,True,38.275,"W północno-wschodnim kącie Afryki leży Egipt, ojczyzna najstarszej cywilizacji w"
+human,"Prus – Faraon t.1 (1897), Wstęp",ai,False,38.275,"W północno-wschodnim kącie Afryki leży Egipt, ojczyzna najstarszej cywilizacji w"
 human,"Prus – Faraon t.2 (1897), Świątynia Hator",human,True,55.8089,Niedaleko miasta Pi-Bast znajdowała się wielka świątynia bogini Hator. W miesiąc
 human,"Prus – Placówka (1886), ziemia i chłop",human,True,71.9115,Oto — wstyd powiedzieć — skąpisz mi bydlęcej mierzwy! Skruszony chłop zwiesił gł
 human,"Żeromski – Ludzie bezdomni t.1 (1900), Judym w Paryżu",human,True,71.7929,"Tomasz Judym wracał przez Champs Elysees z Lasku Bulońskiego, dokąd jeździł ze s"
@@ -29,7 +29,7 @@ ai,,ai,True,27.678,"Rzeka płynęła spokojnie między wierzbami, niosąc ze sob
 ai,,ai,True,36.6942,Doktor Henryk Wiśniewski był człowiekiem zasad. Przez trzydzieści lat pracy w sz
 ai,,ai,True,27.2622,W małym miasteczku nad Narwią czas płynął inaczej niż w wielkich miastach. Sklep
 ai,,ai,True,29.759,"Biblioteka miejska zamykała się o osiemnastej. Marcin wiedział o tym doskonale, "
-ai,,human,False,37.043,Górskie schronisko otwierało się pierwszego maja i zamykało z końcem września. P
+ai,,ai,True,37.043,Górskie schronisko otwierało się pierwszego maja i zamykało z końcem września. P
 ai,,ai,True,33.9295,"Marta wróciła do rodzinnego domu po pięciu latach. Dom wyglądał mniejszy, niż go"
 ai,,ai,True,30.8353,"Na dworcu kolejowym w Krakowie, tuż przed świtem, kiedy hala była jeszcze niemal"
 ai,,ai,True,34.2348,"Zima przyszła wcześniej niż zwykle, przynosząc śnieg już w połowie listopada. Dl"
@@ -49,3 +49,33 @@ human,"Sienkiewicz – Potop t.3 (1886), Karol Gustaw w Prusach",human,True,76.8
 ai,,ai,True,32.7956,Listopadowe popołudnie zaciemniło miasto szybciej niż zwykle. O piętnastej było 
 ai,,ai,True,22.0068,"Szkoła, do której Piotruś chodził od pierwszej klasy, stała na końcu ulicy Lipow"
 ai,,ai,True,29.8843,"Księżyc świecił jasno tej nocy, rzucając srebrne refleksy na spokojną taflę jezi"
+human,Fikcja stylizowana XIX w. (przypadek graniczny),human,True,42.3665,Rok 1812 nastąpił. Napoleon wyruszył z wojskiem ku Rosji. Wojsko polskie towarzy
+ai,Claude — proza psychologiczna (Aleksandra),ai,True,19.1146,"Aleksandra poczuła, że coś się zmieniło, zanim jeszcze zdążyła to nazwać. Może t"
+human,"Mickiewicz — Pan Tadeusz, Inwokacja",human,True,130.4099,Kraj lat dziecinnych! On zawsze zostanie Święty i czysty jak pierwsze kochanie. 
+ai,Claude — opis kamienicy (Helena),ai,True,38.3718,"Dom przy Królewskiej stał od trzydziestu lat i wyglądał na to, że stać będzie ko"
+ai,Claude — scena wiejska styl Reymont (Stach),ai,True,22.207,Stach wyszedł ze stajni i rozejrzał po obejściu. Słońce już chyliło się ku zacho
+human,"Reymont — Ziemia obiecana, Bauer i Łódź",ai,False,37.0574,Ziemia obiecana była wszędzie i nigdzie. Bauer patrzył na kominy fabryczne sterc
+human,"Mickiewicz — Pan Tadeusz, Ksiądz Robak",ai,False,37.5315,Ksiądz Robak siedział w cieniu lip klasztornych i czytał brewiarz. Liście drżały
+ai,Claude — proza minimalistyczna (Michał),ai,True,27.7588,"Michał wrócił do domu o ósmej. Zdjął buty przy wejściu, powiesił kurtkę na haczy"
+human,Zapolska — Moralność pani Dulskiej,ai,False,27.2905,Przez całą noc pani Dulska nie spała. Leżała w łóżku z otwartymi oczyma i liczył
+human,"Orzeszkowa — Nad Niemnem, Justyna",ai,False,29.2082,"Nad Niemnem płynął spokojnie, niosąc na swojej szerokiej tafli odbicia nieba i b"
+ai,Claude — dialog w kawiarni (poeci),ai,True,26.7196,"Poeta przyszedł do Poety w południe. Tak zaczyna się wiele historii, które potem"
+human,"Reymont — Ziemia obiecana, fabryka Müllera",human,True,48.8756,"Łódź kipiała życiem fabrycznym. Z kominów buchał dym, a tkackie maszyny dudniły "
+ai,Claude — pisarka przy biurku (Anna),human,False,45.3277,"Anna zamknęła książkę i spojrzała za okno. Śnieg padał od rana, cicho i konsekwe"
+human,"Mickiewicz — Pan Tadeusz, Jacek Soplica",human,True,56.3518,Jacek Soplica — kto o nim nie słyszał w powiecie? Zwano go niegdyś Niedźwiedziem
+human,"Sienkiewicz — W pustyni i w puszczy, Stasio i Nel",ai,False,39.1861,"Stasio Tarkowski miał czternaście lat i od dawna wiedział, że zostanie podróżnik"
+human,"Tetmajer/Witkiewicz — motyw góralski, Sabała",human,True,75.1465,"Górale znali te szlaki od pokoleń. Ojciec uczył syna, dziad uczył ojca — skałka "
+ai,Claude — powrót do wsi po latach (Piotr),ai,True,27.0214,"Piotr wrócił do wioski po piętnastu latach. Droga była ta sama, tylko drzewa po "
+ai,"Claude — opis rzeczki, proza poetycka",ai,True,40.9141,Rzeczka pod lasem nosiła w sobie pamięć całej wsi. Każde pokolenie przychodziło 
+human,"Proza XIX w. — salon towarzyski, Księżna Izabela",human,True,64.1094,Księżna Izabela przyjmowała gości we wtorki. Salon był odpowiednio urządzony do 
+ai,"Claude — bezsenność, proza psychologiczna (Marta)",ai,True,34.8756,Marta długo nie mogła zasnąć. Leżała na plecach w ciemnościach i słuchała odgłos
+human,"Sienkiewicz — Krzyżacy, Grunwald",human,True,59.8201,Na polach pod Grunwaldem leżała cicha ziemia. Krzyżacy ciągnęli z zachodu w szyk
+ai,Claude — kamienica wielorodzinna przy Złotej,human,False,41.0623,"Kamienica przy Złotej miała cztery piętra i dwadzieścia trzy mieszkania, i tyle "
+human,"Witkiewicz — Na przełęczy, Tatry o świcie",human,True,43.4365,"Tatry o świcie miały w sobie coś z objawienia. Witkiewicz chodził tam od lat, al"
+ai,Claude — portret nauczyciela historii (Radwan),ai,True,34.5758,Profesor Radwan miał sześćdziesiąt lat i od czterdziestu uczył historii w tej sa
+human,"Reymont — Chłopi, praca na roli (Antek)",human,True,48.087,Antek wyrósł na polu. Ojciec zabrał go do roboty jak miał sześć lat — jeszcze po
+ai,Claude — portret zakonnicy-nauczycielki (Klara),ai,True,21.607,Siostra Klara prowadziła szkółkę od lat trzydziestu. Dzieci przychodziły różne —
+human,Proza ludowa — babka Agnieszka i wnuk Jasiek,ai,False,35.0967,W izbie było zimno i pachniało smołą i suszonymi grzybami. Babka Agnieszka siedz
+human,Kochanowski — Treny VIII (fragment adaptowany),human,True,122.1654,"Wielka mi to ulga w płaczu i w żalu, Że po wszytkich stronach w smętnym tym nied"
+ai,"Claude — spotkanie w parku, romans (Zofia)",ai,True,40.0405,"Zofię poznał w maju. To było w parku, przy fontannie, która nie działała od lat "
+human,"Orzeszkowa — Nad Niemnem, Tadeusz i rzeka",ai,False,34.4952,Rzeka Niemno wiła się przez kraj jak żyła przez ciało. Tadeusz Korczyński znał k

@@ -1,21 +1,21 @@
 {
-  "optimal_perplexity_threshold": 37.043,
-  "auc": 0.9376,
-  "accuracy": 0.9,
-  "precision": 0.8846,
-  "recall": 0.92,
-  "f1": 0.902,
+  "optimal_perplexity_threshold": 41.0623,
+  "auc": 0.9029,
+  "accuracy": 0.825,
+  "precision": 0.7609,
+  "recall": 0.9211,
+  "f1": 0.8333,
   "confusion_matrix": [
     [
-      22,
-      3
+      31,
+      11
     ],
     [
-      2,
-      23
+      3,
+      35
     ]
   ],
-  "n_human": 25,
-  "n_ai": 25,
-  "n_total": 50
+  "n_human": 42,
+  "n_ai": 38,
+  "n_total": 80
 }

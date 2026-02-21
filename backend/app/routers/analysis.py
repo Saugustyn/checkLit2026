@@ -4,6 +4,7 @@ Obsługuje zarówno tekst wklejony jak i upload pliku (txt/pdf/docx).
 """
 import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import PlainTextResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -39,12 +40,13 @@ def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
             detail="Tekst jest zbyt długi. Maksymalna długość to 500 000 znaków (~10 stron A4)."
         )
 
-    ai_result       = detect_ai(text)
+    ai_result         = detect_ai(text)
     stylometry_result = analyze_stylometry(text)
-    quality_result  = analyze_quality(text)
+    quality_result    = analyze_quality(text)
 
     db_analysis = Analysis(
         text_preview=text[:500],
+        full_text=text,                          # ← zapisujemy pełny tekst
         text_length=len(text),
         ai_probability=ai_result["ai_probability"],
         ttr=stylometry_result["ttr"],
@@ -98,7 +100,6 @@ async def analyze_file(
 
     Limit: 10MB na plik (~10+ stron A4 w PDF).
     """
-    # Sprawdź rozmiar (10MB)
     MAX_SIZE = 10 * 1024 * 1024
     content = await file.read()
 
@@ -108,7 +109,6 @@ async def analyze_file(
             detail=f"Plik jest zbyt duży ({len(content) // 1024}KB). Maksymalny rozmiar: 10MB."
         )
 
-    # Ekstrahuj tekst
     try:
         text = extract_text(file.filename, content)
     except ValueError as e:
@@ -191,3 +191,63 @@ def delete_analysis(analysis_id: int, db: Session = Depends(get_db)):
     db.delete(analysis)
     db.commit()
     return {"message": "Usunięto"}
+
+
+# ─── Endpoint 7: Pobierz oryginalny tekst ────────────────────
+
+@router.get("/results/{analysis_id}/text")
+def download_text(analysis_id: int, db: Session = Depends(get_db)):
+    """
+    Zwraca oryginalny tekst analizy jako plik .txt do pobrania.
+    Jeśli pełny tekst nie jest dostępny (stare wpisy), zwraca podgląd.
+    """
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analiza nie znaleziona")
+
+    text_content = analysis.full_text or analysis.text_preview or ""
+
+    return PlainTextResponse(
+        content=text_content,
+        headers={
+            "Content-Disposition": f'attachment; filename="tekst_analiza_{analysis_id}.txt"',
+            "Content-Type": "text/plain; charset=utf-8"
+        }
+    )
+
+
+# ─── Endpoint 8: Eksport raportu JSON ────────────────────────
+
+@router.get("/results/{analysis_id}/export")
+def export_report(analysis_id: int, db: Session = Depends(get_db)):
+    """
+    Eksportuje pełny raport analizy jako JSON do pobrania.
+    Zawiera wszystkie metryki, metadane i oryginalny tekst.
+    """
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analiza nie znaleziona")
+
+    full = json.loads(analysis.full_results)
+
+    report = {
+        "meta": {
+            "id": analysis.id,
+            "created_at": analysis.created_at.isoformat(),
+            "text_length": analysis.text_length,
+            "platform": "checkLit – Literary Analyzer",
+        },
+        "text_preview": analysis.text_preview,
+        "ai_detection": full["ai"],
+        "stylometry": full["stylometry"],
+        "quality": full["quality"],
+    }
+
+    return JSONResponse(
+        content=report,
+        headers={
+            "Content-Disposition": f'attachment; filename="raport_analiza_{analysis_id}.json"'
+        }
+    )
