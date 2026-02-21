@@ -1,0 +1,51 @@
+﻿label,source,label_predicted,correct,perplexity,text
+human,"Prus – Lalka t.1 (1890), rozdz. I",human,True,47.832,"W początkach roku 1878, kiedy świat polityczny zajmował się pokojem san-stefańsk"
+human,"Prus – Lalka t.1 (1890), dialog w jadłodajni",human,True,41.6607,"— Zaczekaj pan — przerwał radca. — Przerzucił się, ale nie do galanterii, tylko "
+human,"Prus – Lalka t.2 (1890), Pamiętnik Rzeckiego",human,True,77.0122,"Sytuacja polityczna jest tak niepewna, że wcale by mnie nie zdziwiło, gdyby okoł"
+human,"Prus – Lalka t.2 (1890), Wokulski w pociągu",ai,False,28.2625,W kwadrans po wyjeździe z Warszawy koleją warszawsko-bydgoską Wokulski doznał dw
+human,"Prus – Faraon t.1 (1897), Wstęp",human,True,38.275,"W północno-wschodnim kącie Afryki leży Egipt, ojczyzna najstarszej cywilizacji w"
+human,"Prus – Faraon t.2 (1897), Świątynia Hator",human,True,55.8089,Niedaleko miasta Pi-Bast znajdowała się wielka świątynia bogini Hator. W miesiąc
+human,"Prus – Placówka (1886), ziemia i chłop",human,True,71.9115,Oto — wstyd powiedzieć — skąpisz mi bydlęcej mierzwy! Skruszony chłop zwiesił gł
+human,"Żeromski – Ludzie bezdomni t.1 (1900), Judym w Paryżu",human,True,71.7929,"Tomasz Judym wracał przez Champs Elysees z Lasku Bulońskiego, dokąd jeździł ze s"
+human,"Żeromski – Ludzie bezdomni t.1 (1900), Judym przy ławce",human,True,68.6088,Judym znalazł pod osłoną kasztanów brzeg wolnej ławy i z wielką satysfakcją usia
+human,"Żeromski – Ludzie bezdomni t.1 (1900), Judym na Ciepłej",human,True,52.2653,"Judym szedł prędko, mrucząc coś do siebie. Mury o kolorze zakurzonego grynszpanu"
+human,"Żeromski – Ludzie bezdomni t.2 (1900), szpital w Cisowie",human,True,55.4669,"Gdy trafiło się wolne miejsce, wnet je ktoś zajmował i przymykał oczy nie po to,"
+human,"Żeromski – Ludzie bezdomni t.2 (1900), eskulap i sprzęty",human,True,89.7234,Na kupno dwu wanien i urządzeń do ogrzewania wody grały teatr amatorski najpiękn
+human,"Żeromski – Przedwiośnie (1924), Rodowód Baryki",human,True,63.7419,"Nie chodzi tutaj — u kaduka! — o herb ani o szeregi przodków podgolonych, z sarm"
+human,"Sienkiewicz – Quo Vadis (1896), przebudzenie Petroniusza",human,True,48.0219,"Petroniusz obudził się zaledwie koło południa i jak zwykle, zmęczony bardzo. Pop"
+human,"Sienkiewicz – Ogniem i mieczem t.1 (1884), rok 1647",human,True,41.2944,"Rok 1647 był to dziwny rok, w którym rozmaite znaki na niebie i ziemi zwiastował"
+human,"Sienkiewicz – Potop t.1 (1886), ród Billewiczów",human,True,82.715,"Był na Żmudzi ród możny Billewiczów, od Mendoga się wywodzący, wielce skoligacon"
+human,"Sienkiewicz – Potop t.2 (1886), Soroka i Kmicic",ai,False,36.4568,"Wierny Soroka wiózł swego pułkownika przez lasy głębokie, sam nie wiedząc, dokąd"
+human,"Sienkiewicz – Listy z Ameryki (1876), wstęp",human,True,74.4984,W życiu literackim dzieje się wiele rzeczy tak nagłych a niespodziewanych jak śm
+human,"Reymont – Chłopi, Zima (1904), nadchodziła zima",human,True,142.3696,Nadchodziła zima — jeszcze się barowała z jesienią i porykujący tłukła po sinych
+human,"Reymont – Chłopi, Jesień (1904), Boryna na miedzy",ai,False,29.1891,Chłopi siedzieli przed chatami na przyźbach i gwarzyło się po wszystkich wsiach 
+human,"Orzeszkowa – W klatce (1888), scena w wagonie",human,True,54.7345,"Było to w miesiącu Wrześniu, przy schyłku krótkiego jesiennego dnia. Przed jedną"
+human,"Orzeszkowa – Gloria victis (1910), wiatr nad mogiłą",human,True,50.4606,Wiatr prędki już nie płakał. Kryształowe ciało jego wstawać poczęło nad wzgórzem
+human,"Konopnicka – Wrażenia z podróży (1884), o parasolach",human,True,60.6036,"Jeżeli kochasz przyrodę i chcesz wypatrzyć jej tajemnicze piękności, i posłyszeć"
+human,"Przybyszewski – Moi współcześni (1926), o artyście",human,True,84.24,"Byłem dotychczas wrogiem historyków literatury, którzy grzebali w duszy i życiu "
+ai,,ai,True,21.9102,"Stara kamienica przy ulicy Wiślanej skrywała wiele tajemnic. Jej mury, pamiętają"
+ai,,human,False,47.3501,"Jesień przyszła nagle, jak zwykle zresztą, ignorując wszelkie kalendarze i progn"
+ai,,ai,True,27.678,"Rzeka płynęła spokojnie między wierzbami, niosąc ze sobą liście i wspomnienia la"
+ai,,ai,True,36.6942,Doktor Henryk Wiśniewski był człowiekiem zasad. Przez trzydzieści lat pracy w sz
+ai,,ai,True,27.2622,W małym miasteczku nad Narwią czas płynął inaczej niż w wielkich miastach. Sklep
+ai,,ai,True,29.759,"Biblioteka miejska zamykała się o osiemnastej. Marcin wiedział o tym doskonale, "
+ai,,human,False,37.043,Górskie schronisko otwierało się pierwszego maja i zamykało z końcem września. P
+ai,,ai,True,33.9295,"Marta wróciła do rodzinnego domu po pięciu latach. Dom wyglądał mniejszy, niż go"
+ai,,ai,True,30.8353,"Na dworcu kolejowym w Krakowie, tuż przed świtem, kiedy hala była jeszcze niemal"
+ai,,ai,True,34.2348,"Zima przyszła wcześniej niż zwykle, przynosząc śnieg już w połowie listopada. Dl"
+ai,,ai,True,32.4596,"Apteka przy Rynku działała od osiemdziesięciu lat bez przerwy, przez dwie wojny "
+ai,,ai,True,22.165,Drzwi do pracowni były zawsze zamknięte. Nikt z domowników nie wchodził tam bez 
+ai,,ai,True,31.0145,"Most nad Wisłą był najstarszą budowlą w okolicy. Mówiono, że pamięta czasy rozbi"
+ai,,ai,True,30.6605,Pociąg do Gdańska odjeżdżał o szóstej czterdzieści pięć. Beata kupiła bilet z ty
+ai,,ai,True,29.1352,"Lekcja historii zaczęła się o ósmej rano. Nauczyciel, pan Lewandowski, miał sześ"
+ai,,ai,True,33.0861,"Ogród przy starej willi był zaniedbany od lat. Rosły tam dzikie różane krzewy, b"
+ai,,ai,True,34.91,"Sylwia wróciła do pracy po urlopie macierzyńskim z uczuciem, które trudno opisać"
+ai,,ai,True,34.7582,"Wieczorami, gdy miasto cichnęło i przez uchylone okno wpadało powietrze pachniąc"
+ai,,ai,True,25.8444,Stary zegarmistrz miał swój sklep przy tej samej ulicy od czterdziestu lat. Jego
+ai,,ai,True,30.0839,Targ odbywał się w Lipcowie w każdą sobotę od niepamiętnych czasów. Przyjeżdżali
+ai,,ai,True,22.6844,Wspomnienia wracają najczęściej w nieoczekiwanych momentach. Ewa stała w kolejce
+ai,,ai,True,22.0083,"Najstarsza córka wróciła po raz ostatni do domu w grudniu. Wiedziała, że to osta"
+human,"Sienkiewicz – Potop t.3 (1886), Karol Gustaw w Prusach",human,True,76.8423,"W czasie gdy w Rzeczypospolitej wszystko, co żyło, siadało na koń, Karol Gustaw "
+ai,,ai,True,32.7956,Listopadowe popołudnie zaciemniło miasto szybciej niż zwykle. O piętnastej było 
+ai,,ai,True,22.0068,"Szkoła, do której Piotruś chodził od pierwszej klasy, stała na końcu ulicy Lipow"
+ai,,ai,True,29.8843,"Księżyc świecił jasno tej nocy, rzucając srebrne refleksy na spokojną taflę jezi"

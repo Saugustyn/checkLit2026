@@ -1,0 +1,14 @@
+1. Setup projektu (struktura folderów, FastAPI hello world, React hello world)
+2. Moduł NLP + stylometria (backend)
+3. Moduł detekcji AI (backend)
+4. Endpoints API
+5. Strona /analyze + /results (frontend)
+6. Strona /history
+7. Strona /compare
+8. Testy
+9. Landing page + About
+10. Eksport raportu
+
+
+
+Uwaga do pracy inżynierskiej: ta zmiana jest wartościowa merytorycznie — możesz opisać ją jako świadomą decyzję projektową: "Pierwotnie zastosowano model BERT (Herbert), jednak masked LM nie nadaje się do obliczania perplexity w kontekście detekcji AI. Zastąpiono go autoregresywnym modelem Polish GPT-2, co jest podejściem zgodnym z literaturą naukową."
