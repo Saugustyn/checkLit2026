@@ -1,16 +1,3 @@
-"""
-checkLit – Framework ewaluacji detekcji AI
-==========================================
-Wczytuje corpus.csv (label, source, text), oblicza perplexity polskim GPT-2,
-wyznacza optymalny próg metodą ROC/Youden i raportuje metryki.
-
-Użycie:
-    python evaluate.py
-
-Wymagania:
-    pip install scikit-learn matplotlib pandas transformers torch sacremoses
-"""
-
 import json
 import sys
 import time
@@ -24,16 +11,14 @@ from sklearn.metrics import (
 )
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# ─── Ustawienia ───────────────────────────────────────────────
 CORPUS_PATH  = Path("corpus_full.csv")
 OUTPUT_CSV   = Path("evaluation_results.csv")
 OUTPUT_JSON  = Path("evaluation_summary.json")
 OUTPUT_PLOT  = Path("roc_curve.png")
 MODEL_NAME   = "sdadas/polish-gpt2-small"
-MAX_LENGTH   = 512   # tokeny (kompromis: szybkość vs dokładność)
+MAX_LENGTH   = 512   
 
 
-# ─── Ładowanie modelu ─────────────────────────────────────────
 def load_model():
     print(f"Ładowanie modelu: {MODEL_NAME}")
     print("Pierwsze uruchomienie pobierze ~500MB...\n")
@@ -60,9 +45,7 @@ def compute_perplexity(text: str, model, tokenizer) -> float | None:
         return None
 
 
-# ─── Główna ewaluacja ─────────────────────────────────────────
 def main():
-    # 1. Wczytaj korpus
     if not CORPUS_PATH.exists():
         print(f"BŁĄD: Nie znaleziono pliku {CORPUS_PATH}")
         sys.exit(1)
@@ -84,7 +67,6 @@ def main():
     n_ai    = (df["label"] == "ai").sum()
     print(f"Korpus: {len(df)} tekstów  (human: {n_human}, AI: {n_ai})\n")
 
-    # 2. Oblicz perplexity
     model, tokenizer = load_model()
     perplexities = []
     for i, row in df.iterrows():
@@ -98,26 +80,21 @@ def main():
 
     df["perplexity"] = perplexities
 
-    # Usuń wiersze gdzie perplexity = None
     df_valid = df.dropna(subset=["perplexity"]).copy()
     if len(df_valid) < len(df):
         print(f"\nOSTRZEŻENIE: Pominięto {len(df)-len(df_valid)} tekstów (błąd modelu).")
 
-    # 3. ROC curve + próg Youdena
     y_true  = (df_valid["label"] == "ai").astype(int)
-    # Niższa perplexity → wyższe prawdopodobieństwo AI → odwracamy skalę
     y_score = -df_valid["perplexity"]
 
     fpr, tpr, thresholds = roc_curve(y_true, y_score)
     roc_auc = auc(fpr, tpr)
 
-    # Kryterium Youdena: maksymalizuj TPR - FPR
     youdens_j  = tpr - fpr
     best_idx   = youdens_j.argmax()
-    best_thresh_neg = thresholds[best_idx]   # próg na skali -perplexity
+    best_thresh_neg = thresholds[best_idx]   
     optimal_ppx = round(-best_thresh_neg, 4)
 
-    # 4. Predykcje i metryki
     df_valid["ai_predicted"] = df_valid["perplexity"] < optimal_ppx
     y_pred = df_valid["ai_predicted"].astype(int)
 
@@ -130,7 +107,6 @@ def main():
     df_valid["label_predicted"] = df_valid["ai_predicted"].map({True: "ai", False: "human"})
     df_valid["correct"] = df_valid["label"] == df_valid["label_predicted"]
 
-    # 5. Wyniki szczegółowe
     print("\n" + "="*60)
     print("WYNIKI EWALUACJI")
     print("="*60)
@@ -152,7 +128,6 @@ def main():
             src = f" | {r['source']}" if has_source else ""
             print(f"    label={r['label']} → pred={r['label_predicted']} | ppx={r['perplexity']:.2f}{src}")
 
-    # 6. Zapisz pliki
     out_cols = ["label", "label_predicted", "correct", "perplexity"]
     if has_source:
         out_cols = ["label", "source", "label_predicted", "correct", "perplexity"]
@@ -175,7 +150,6 @@ def main():
     with open(OUTPUT_JSON, "w", encoding="utf-8") as fp:
         json.dump(summary, fp, indent=2, ensure_ascii=False)
 
-    # 7. Wykres ROC + rozkład perplexity
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -183,7 +157,6 @@ def main():
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
 
-        # ROC
         ax1.plot(fpr, tpr, "b-", lw=2, label=f"AUC = {roc_auc:.3f}")
         ax1.plot([0, 1], [0, 1], "k--", lw=1)
         ax1.scatter(fpr[best_idx], tpr[best_idx], s=120,
@@ -195,7 +168,6 @@ def main():
         ax1.legend(loc="lower right")
         ax1.grid(True, alpha=0.3)
 
-        # Rozkład perplexity
         human_ppx = df_valid[df_valid["label"] == "human"]["perplexity"]
         ai_ppx    = df_valid[df_valid["label"] == "ai"]["perplexity"]
         bins = 20

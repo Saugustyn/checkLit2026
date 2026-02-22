@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.routers import analysis
 
-# Tworzenie tabel w bazie danych
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -12,7 +11,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS - pozwala React (port 5173) komunikować się z FastAPI (port 8000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -21,7 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rejestracja routerów
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 
 

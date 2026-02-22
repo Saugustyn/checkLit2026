@@ -1,10 +1,3 @@
-"""
-make_corpus.py
-Łączy stary corpus.csv z 30 nowymi tekstami testowymi → corpus_full.csv
-
-Uruchom:
-    python make_corpus.py
-"""
 import csv
 import os
 

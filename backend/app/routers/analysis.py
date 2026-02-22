@@ -1,7 +1,3 @@
-"""
-Router FastAPI dla endpointów analizy tekstu.
-Obsługuje zarówno tekst wklejony jak i upload pliku (txt/pdf/docx).
-"""
 import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import PlainTextResponse, JSONResponse
@@ -22,13 +18,8 @@ from app.services.file_parser import extract_text
 router = APIRouter()
 
 
-# ─── Wspólna logika analizy ───────────────────────────────────
-
 def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
-    """
-    Uruchamia pełny pipeline analizy i zapisuje do bazy.
-    Używane zarówno przez /analyze (tekst) jak i /analyze-file (plik).
-    """
+
     if len(text) < 50:
         raise HTTPException(
             status_code=400,
@@ -46,7 +37,7 @@ def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
 
     db_analysis = Analysis(
         text_preview=text[:500],
-        full_text=text,                          # ← zapisujemy pełny tekst
+        full_text=text,                         
         text_length=len(text),
         ai_probability=ai_result["ai_probability"],
         ttr=stylometry_result["ttr"],
@@ -70,13 +61,12 @@ def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
         created_at=db_analysis.created_at,
         text_preview=db_analysis.text_preview,
         text_length=db_analysis.text_length,
+        full_text=text,
         ai_detection=AIDetectionResult(**ai_result),
         stylometry=StylometryResult(**stylometry_result),
         quality=QualityResult(**quality_result)
     )
 
-
-# ─── Endpoint 1: Analiza wklejonego tekstu ───────────────────
 
 @router.post("/analyze", response_model=AnalysisResponse)
 def analyze_text(request: AnalysisRequest, db: Session = Depends(get_db)):
@@ -87,7 +77,6 @@ def analyze_text(request: AnalysisRequest, db: Session = Depends(get_db)):
     return run_analysis_pipeline(request.text.strip(), db)
 
 
-# ─── Endpoint 2: Upload pliku ─────────────────────────────────
 
 @router.post("/analyze-file", response_model=AnalysisResponse)
 async def analyze_file(
@@ -117,11 +106,9 @@ async def analyze_file(
     return run_analysis_pipeline(text, db)
 
 
-# ─── Endpoint 3: Historia analiz ─────────────────────────────
 
 @router.get("/history", response_model=list[AnalysisListItem])
 def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
-    """Pobiera historię analiz (paginacja: skip/limit)."""
     analyses = (
         db.query(Analysis)
         .order_by(Analysis.created_at.desc())
@@ -131,8 +118,6 @@ def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     )
     return analyses
 
-
-# ─── Endpoint 4: Wyniki konkretnej analizy ───────────────────
 
 @router.get("/results/{analysis_id}", response_model=AnalysisResponse)
 def get_result(analysis_id: int, db: Session = Depends(get_db)):
@@ -149,13 +134,12 @@ def get_result(analysis_id: int, db: Session = Depends(get_db)):
         created_at=analysis.created_at,
         text_preview=analysis.text_preview,
         text_length=analysis.text_length,
+        full_text=analysis.full_text,
         ai_detection=AIDetectionResult(**full["ai"]),
         stylometry=StylometryResult(**full["stylometry"]),
         quality=QualityResult(**full["quality"])
     )
 
-
-# ─── Endpoint 5: Porównanie tekstów ──────────────────────────
 
 @router.post("/compare", response_model=CompareResponse)
 def compare_texts(request: CompareRequest):
@@ -180,8 +164,6 @@ def compare_texts(request: CompareRequest):
     )
 
 
-# ─── Endpoint 6: Usunięcie analizy ───────────────────────────
-
 @router.delete("/history/{analysis_id}")
 def delete_analysis(analysis_id: int, db: Session = Depends(get_db)):
     """Usuwa analizę z historii."""
@@ -192,8 +174,6 @@ def delete_analysis(analysis_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Usunięto"}
 
-
-# ─── Endpoint 7: Pobierz oryginalny tekst ────────────────────
 
 @router.get("/results/{analysis_id}/text")
 def download_text(analysis_id: int, db: Session = Depends(get_db)):
@@ -216,8 +196,6 @@ def download_text(analysis_id: int, db: Session = Depends(get_db)):
         }
     )
 
-
-# ─── Endpoint 8: Eksport raportu JSON ────────────────────────
 
 @router.get("/results/{analysis_id}/export")
 def export_report(analysis_id: int, db: Session = Depends(get_db)):

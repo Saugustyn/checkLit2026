@@ -23,7 +23,7 @@ function App() {
           </Routes>
         </main>
         <footer className="text-center text-sm text-gray-400 py-4">
-          Literary Analyzer © 2024 — Praca inżynierska
+          checkLit © 2026 — Praca inżynierska
         </footer>
       </div>
     </Router>

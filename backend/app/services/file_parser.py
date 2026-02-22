@@ -1,26 +1,15 @@
-"""
-Moduł parsowania plików tekstowych.
-Obsługuje formaty: .txt, .pdf, .docx
-
-Wymagania dodatkowe (dodać do requirements.txt):
-    pypdf2>=3.0.0
-    python-docx>=1.1.0
-"""
 import re
 from pathlib import Path
 
 
 def extract_text_from_txt(content: bytes, encoding: str = "utf-8") -> str:
-    """Wyciąga tekst z pliku .txt"""
     try:
         return content.decode(encoding)
     except UnicodeDecodeError:
-        # Fallback na latin-2 (common dla starszych polskich plików)
         return content.decode("latin-2", errors="replace")
 
 
 def extract_text_from_pdf(content: bytes) -> str:
-    """Wyciąga tekst z pliku .pdf używając pypdf"""
     try:
         import pypdf
         import io
@@ -40,7 +29,6 @@ def extract_text_from_pdf(content: bytes) -> str:
 
 
 def extract_text_from_docx(content: bytes) -> str:
-    """Wyciąga tekst z pliku .docx używając python-docx"""
     try:
         import docx
         import io
@@ -62,16 +50,12 @@ def clean_text(text: str) -> str:
     - Usuwa znaki specjalne PDF (łamanie wierszy mid-word)
     - Normalizuje końce linii
     """
-    # Usuń znaki NULL i inne kontrolne (oprócz newline i tab)
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
 
-    # PDF często łamie słowa myślnikiem na końcu linii — sklejamy
     text = re.sub(r"-\n([a-ząęóśłżźćń])", r"\1", text)
 
-    # Normalizuj wielokrotne newliny do max 2
     text = re.sub(r"\n{3,}", "\n\n", text)
 
-    # Normalizuj spacje
     text = re.sub(r" {2,}", " ", text)
 
     return text.strip()

@@ -1,14 +1,3 @@
-"""
-Moduł analizy jakości językowej tekstu.
-
-Implementuje:
-- LIX (Läsbarhetsindex) – wskaźnik czytelności neutralny językowo,
-  odpowiedni dla tekstów polskich i innych słowiańskich.
-  Zastępuje Flesch Reading Ease, który był kalibrowany pod angielski
-  i dawał zaniżone wyniki dla polszczyzny.
-- Gęstość interpunkcji
-- Średnia długość słowa
-"""
 import re
 import string
 from typing import List

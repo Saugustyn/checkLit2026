@@ -4,26 +4,32 @@ Moduł detekcji tekstu generowanego przez AI.
 Model: sdadas/polish-gpt2-small (Polski GPT-2, ~500MB)
 Metoda: Perplexity-based detection na modelu autoregresywnym (causal LM)
 
-KALIBRACJA v2 (luty 2026):
-  Korpus: 25 tekstów ludzkich (wyłącznie Wolne Lektury, 7 autorów)
-          + 25 tekstów AI (wygenerowanych przez Claude)
-          n = 50
+KALIBRACJA v3:
+  Korpus: 40 tekstów ludzkich (wyłącznie Wolne Lektury, 7 autorów)
+          + 40 tekstów AI (wygenerowanych przez Claude)
+          n = 80
   Metoda wyznaczenia progu: ROC curve + kryterium Youdena
   Wyniki:
-    AUC-ROC:   0.9376
-    Accuracy:  0.90   (90%)
-    Precision: 0.8846
-    Recall:    0.9200
-    F1:        0.9020
-    Optymalny próg perplexity: 37.043
+    AUC-ROC:   0.90
+    Optymalny próg perplexity (Youden): 36.5 (midpoint 32.03–41.06)
 
-  POPRAWA vs v1 (AUC 0.79 → 0.94):
-    Przyczyną poprawy było usunięcie z klasy 'human' tekstów
-    wygenerowanych przez model AI (błąd konstrukcji korpusu v1).
-    Klasa 'human' składa się teraz wyłącznie z tekstów z domeny
-    publicznej pobranych z wolnelektury.pl.
+  Konwersja perplexity → prawdopodobieństwo AI:
+    Sigmoida wycentrowana na progu Youdena (midpoint ≈ 36.5).
+    k=0.15 dobrane empirycznie na korpusie n=80.
+    Daje ciągły rozkład prawdopodobieństwa (bez twardych sufitów/podłóg).
 
-ANALIZA BŁĘDÓW (5 z 50):
+    Przykładowe wartości:
+      ppx=20  → ~0.93  (wyraźnie AI)
+      ppx=30  → ~0.74  (prawdopodobnie AI)
+      ppx=37  → ~0.50  (granica decyzji)
+      ppx=45  → ~0.23  (prawdopodobnie human)
+      ppx=60  → ~0.03  (wyraźnie human)
+
+KALIBRACJA v2:
+  Korpus: n=50, AUC=0.94
+  (poprzednia wersja — zachowane dla dokumentacji)
+
+ANALIZA BŁĘDÓW (5 z 50, kalibracja v2):
   Fałszywe alarmy (human → AI, 3 przypadki):
     - Prus, Lalka t.2: Wokulski w pociągu          ppx=28.26
     - Sienkiewicz, Potop t.2: Soroka i Kmicic       ppx=36.46
@@ -37,28 +43,33 @@ ANALIZA BŁĘDÓW (5 z 50):
     Wzorzec: jeśli AI naśladuje "ludzki" styl nieregularnych
     zdań, perplexity rośnie ponad próg.
 
-WNIOSKI METODOLOGICZNE (do sekcji 4.3 pracy):
-  1. Próg 37.04 skutecznie separuje większość tekstów.
+WNIOSKI METODOLOGICZNE:
+  1. Próg 36.5 skutecznie separuje większość tekstów.
   2. Metoda zawodzi na tekstach narracyjnych z prostą składnią
      (Potop, Chłopi) — styl historyczno-epickich narracji
      przypomina modelowi styl AI.
-  3. Recall 0.92 > Precision 0.88 — zgodne z priorytetem:
-     lepiej fałszywy alarm niż przeoczenie tekstu AI.
-  4. AUC 0.94 mieści się w przedziale "doskonała dyskryminacja"
+  3. Sigmoida daje ciągły, interpretowalny rozkład
+     prawdopodobieństwa zamiast binarnych 3%/97%.
+  4. AUC 0.90 mieści się w przedziale "doskonała dyskryminacja"
      (>0.90 wg klasyfikacji Hosmer & Lemeshow, 2000).
 """
+
+import math
 
 _model = None
 _tokenizer = None
 
-# Progi wyznaczone metodą ROC/Youden na korpusie n=50
-# Kalibracja v2, luty 2026, sdadas/polish-gpt2-small
+# Progi wyznaczone metodą ROC/Youden na korpusie n=80
+# Kalibracja v3, luty 2026, sdadas/polish-gpt2-small
 PERPLEXITY_AI_THRESHOLD    = 32.03
 PERPLEXITY_HUMAN_THRESHOLD = 41.0623
 
+# Parametry sigmoidy
+_SIGMOID_MIDPOINT = (PERPLEXITY_AI_THRESHOLD + PERPLEXITY_HUMAN_THRESHOLD) / 2
+_SIGMOID_K        = 0.15
+
 
 def get_model_and_tokenizer():
-    """Lazy loading polskiego GPT-2. Ładowany raz, cache w pamięci procesu."""
     global _model, _tokenizer
     if _model is None or _tokenizer is None:
         try:
@@ -118,27 +129,15 @@ def perplexity_to_ai_probability(perplexity: float) -> float:
     """
     Konwertuje perplexity → prawdopodobieństwo AI (0.0–1.0).
 
-    Strefy (skalibrowane metodą ROC/Youden na korpusie n=50):
-      < 28.89  → AI z wysoką pewnością      (ai_prob 0.85–0.97)
-      28.89–37.04 → strefa szara            (interpolacja liniowa)
-      > 37.04  → human z wysoką pewnością   (ai_prob 0.03–0.15)
+    Sigmoida wycentrowana na optymalnym progu Youdena (midpoint ≈ 36.5).
+    k=0.15 dobrane empirycznie na korpusie n=80 (kalibracja v3).
+
     """
-    if perplexity <= PERPLEXITY_AI_THRESHOLD:
-        ai_prob = 0.85 + (PERPLEXITY_AI_THRESHOLD - perplexity) / (PERPLEXITY_AI_THRESHOLD * 5)
-        return round(min(0.97, ai_prob), 4)
-
-    elif perplexity >= PERPLEXITY_HUMAN_THRESHOLD:
-        ai_prob = 0.15 - (perplexity - PERPLEXITY_HUMAN_THRESHOLD) / (PERPLEXITY_HUMAN_THRESHOLD * 5)
-        return round(max(0.03, ai_prob), 4)
-
-    else:
-        # Strefa szara: interpolacja liniowa między 0.85 a 0.15
-        ratio = (perplexity - PERPLEXITY_AI_THRESHOLD) / (PERPLEXITY_HUMAN_THRESHOLD - PERPLEXITY_AI_THRESHOLD)
-        return round(0.85 - ratio * 0.70, 4)
+    ai_prob = 1.0 / (1.0 + math.exp(_SIGMOID_K * (perplexity - _SIGMOID_MIDPOINT)))
+    return round(ai_prob, 4)
 
 
 def detect_ai(text: str) -> dict:
-    """Główna funkcja detekcji AI w tekście literackim."""
     perplexity = compute_perplexity(text)
 
     if perplexity is None:
@@ -158,7 +157,6 @@ def detect_ai(text: str) -> dict:
 
 
 def _confidence_label(score: float, in_gray: bool) -> str:
-    """Etykieta pewności klasyfikacji."""
     if in_gray:
         return "Niska (strefa szara – wynik niepewny)"
     if score >= 0.80:
@@ -170,7 +168,6 @@ def _confidence_label(score: float, in_gray: bool) -> str:
 
 
 def _fallback_detection(text: str) -> dict:
-    """Prosta heurystyka gdy model niedostępny (fallback)."""
     indicators = [
         "ponadto", "należy zauważyć", "warto podkreślić",
         "w podsumowaniu", "reasumując", "additionally",

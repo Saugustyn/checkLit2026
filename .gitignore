@@ -22,3 +22,8 @@ dist/
 *.bin
 *.safetensors
 huggingface_cache/
+
+# Outputs skryptów ewaluacji
+evaluation_live_results.json
+evaluation_live_report.html
+evaluation_results.csv

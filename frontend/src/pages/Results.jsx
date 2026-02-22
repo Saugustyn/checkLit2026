@@ -8,7 +8,7 @@ import { getResults, downloadText, exportReportJSON, exportReportPDF } from '../
 
 const Card = ({ title, children, className = '' }) => (
   <div className={`bg-white border border-gray-200 rounded-xl p-6 shadow-sm ${className}`}>
-    <h3 className="font-bold text-lg text-gray-800 mb-4">{title}</h3>
+    <h3 className="font-bold text-base text-gray-800 mb-4 flex items-center gap-1.5">{title}</h3>
     {children}
   </div>
 )
@@ -50,14 +50,14 @@ const ScaleBar = ({ segments, currentValue, max }) => {
   const pct = Math.min((currentValue / max) * 100, 100)
   return (
     <div className="mt-3 mb-1">
-      <div className="flex rounded-full overflow-hidden h-3">
+      <div className="flex rounded-full overflow-hidden h-2.5">
         {segments.map((seg, i) => (
           <div key={i} style={{ width: `${seg.width}%`, backgroundColor: seg.color }} />
         ))}
       </div>
       <div className="relative h-4">
         <div
-          className="absolute top-0 w-2 h-2 rounded-full bg-gray-800 border-2 border-white shadow"
+          className="absolute top-0 w-2 h-2 rounded-full bg-gray-700 border-2 border-white shadow"
           style={{ left: `calc(${pct}% - 4px)` }}
         />
       </div>
@@ -67,18 +67,54 @@ const ScaleBar = ({ segments, currentValue, max }) => {
 
 const AlertBox = ({ type = 'info', children }) => {
   const styles = {
-    info:    'bg-blue-50 border-blue-200 text-blue-800',
+    info:    'bg-primary-50 border-primary-200 text-primary-800',
     warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
     danger:  'bg-red-50 border-red-200 text-red-800',
-    success: 'bg-green-50 border-green-200 text-green-800',
+    success: 'bg-primary-50 border-primary-200 text-primary-800',
   }
-  const icons = { info: 'ℹ️', warning: '⚠️', danger: '🚨', success: '✅' }
+  const markers = {
+    info:    <span className="font-bold mr-1.5">i</span>,
+    warning: <span className="font-bold mr-1.5">!</span>,
+    danger:  <span className="font-bold mr-1.5">!!</span>,
+    success: <span className="font-bold mr-1.5">✓</span>,
+  }
   return (
     <div className={`border rounded-lg p-3 text-xs leading-relaxed ${styles[type]}`}>
-      <span className="mr-1">{icons[type]}</span>{children}
+      {markers[type]}{children}
     </div>
   )
 }
+
+const IconAI = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h.01M15 9h.01M9 15h6"/>
+  </svg>
+)
+const IconRadar = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+  </svg>
+)
+const IconMetrics = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+)
+const IconQuality = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+  </svg>
+)
+const IconNgram = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+)
+const IconEntropy = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+  </svg>
+)
 
 const ExportBar = ({ id }) => {
   const [downloading, setDownloading] = useState('')
@@ -90,15 +126,18 @@ const ExportBar = ({ id }) => {
     <div className="flex flex-wrap gap-3 items-center print:hidden">
       <button onClick={() => handle(() => exportReportJSON(id), 'json')} disabled={!!downloading}
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60">
-        <span>📥</span><span>{downloading === 'json' ? 'Pobieranie...' : 'Eksport JSON'}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>{downloading === 'json' ? 'Pobieranie...' : 'Eksport JSON'}</span>
       </button>
       <button onClick={() => handle(exportReportPDF, 'pdf')} disabled={!!downloading}
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60">
-        <span>🖨️</span><span>{downloading === 'pdf' ? 'Otwieranie...' : 'Drukuj / PDF'}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>{downloading === 'pdf' ? 'Otwieranie...' : 'Drukuj / PDF'}</span>
       </button>
       <button onClick={() => handle(() => downloadText(id), 'txt')} disabled={!!downloading}
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60">
-        <span>📄</span><span>{downloading === 'txt' ? 'Pobieranie...' : 'Pobierz tekst (.txt)'}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>{downloading === 'txt' ? 'Pobieranie...' : 'Pobierz tekst (.txt)'}</span>
       </button>
     </div>
   )
@@ -120,8 +159,8 @@ export default function Results() {
     }
   }, [id])
 
-  if (loading) return <div className="text-center py-20 text-gray-500">⏳ Ładowanie wyników...</div>
-  if (error)   return <div className="text-center py-20 text-red-500">⚠️ {error}</div>
+  if (loading) return <div className="text-center py-20 text-gray-400 text-sm">Ładowanie wyników...</div>
+  if (error)   return <div className="text-center py-20 text-red-500 text-sm">{error}</div>
   if (!data)   return null
 
   const { ai_detection, stylometry, quality } = data
@@ -129,7 +168,7 @@ export default function Results() {
   const lix = quality.lix_score ?? quality.flesch_score
   const inGrayZone = ai_detection.confidence?.toLowerCase().includes('szara')
 
-  const aiColor = aiProb > 0.6 ? 'text-red-600' : aiProb > 0.4 ? 'text-yellow-600' : 'text-green-600'
+  const aiColor = aiProb > 0.41 ? 'text-red-600' : aiProb > 0.32 ? 'text-yellow-600' : 'text-primary-600'
 
   const radarData = [
     { metric: 'TTR',          value: stylometry.ttr },
@@ -163,17 +202,17 @@ export default function Results() {
         </div>
 
         <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-xl print-hidden">
-          <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Eksport wyników</p>
+          <p className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">Eksport wyników</p>
           <ExportBar id={data.id} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          {/* Karta 1: Detekcja AI */}
           <Card title={
-            <span className="flex items-center gap-1">
-              🤖 Detekcja AI
-              <InfoTooltip text="Metoda perplexity na modelu Polish GPT-2 (sdadas/polish-gpt2-small). Niska perplexity = tekst przewidywalny dla modelu = styl AI. Skalibrowano na 50 tekstach polskiej prozy (AUC = 0.94)." />
+            <span className="flex items-center gap-1.5">
+              <IconAI />
+              Detekcja AI
+              <InfoTooltip text="Model roberta-base-openai-detector (HuggingFace Transformers). Klasyfikator binarny z rekalibrowanymi progami wyznaczonymi na korpusie 80 tekstów literackich (AUC = 0.90). Próg human: <32, strefa szara: 32–41, AI: >41." />
             </span>
           }>
             <div className={`text-5xl font-black text-center mb-2 ${aiColor}`}>
@@ -188,41 +227,41 @@ export default function Results() {
               currentValue={aiProb * 100}
               max={100}
               segments={[
-                { width: 40, color: '#22c55e' },
-                { width: 20, color: '#eab308' },
-                { width: 40, color: '#ef4444' },
+                { width: 32, color: '#4ade80' },
+                { width: 9,  color: '#fbbf24' },
+                { width: 59, color: '#f87171' },
               ]}
             />
             <div className="flex justify-between text-xs text-gray-400 mb-4">
-              <span>Ludzki (&lt;40%)</span>
+              <span>Ludzki (&lt;32%)</span>
               <span>Niepewny</span>
-              <span>AI (&gt;60%)</span>
+              <span>AI (&gt;41%)</span>
             </div>
 
             <ProgressBar label="Prawdopodobieństwo AI" value={aiProb} color={
-              aiProb > 0.6 ? 'bg-red-500' : aiProb > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
+              aiProb > 0.41 ? 'bg-red-400' : aiProb > 0.32 ? 'bg-yellow-400' : 'bg-primary-500'
             } />
-            <ProgressBar label="Prawdopodobieństwo człowieka" value={ai_detection.human_probability} color="bg-blue-400" />
+            <ProgressBar label="Prawdopodobieństwo człowieka" value={ai_detection.human_probability} color="bg-primary-300" />
 
             {ai_detection.perplexity && (
               <p className="text-xs text-gray-400 mt-1 mb-3">
                 Perplexity GPT-2: <span className="font-mono font-semibold">{ai_detection.perplexity}</span>
-                <InfoTooltip text="Strefa szara: 28.9–37.0 pkt perplexity. Poniżej 28.9 → AI z wysoką pewnością. Powyżej 37.0 → tekst ludzki (próg Youdena, ROC)." />
+                <InfoTooltip text="Strefa szara: 32.03–41.06 pkt. Poniżej 32.03 → AI z wysoką pewnością. Powyżej 41.06 → tekst ludzki (progi wyznaczone metodą Youdena na ROC, n=80)." />
               </p>
             )}
 
             <div className="space-y-2">
               {inGrayZone && (
                 <AlertBox type="warning">
-                  <strong>Strefa szara</strong> (perplexity 28.9–37.0). Klasyfikacja niepewna — tekst wykazuje cechy obu stylów. Zalecana ręczna weryfikacja.
+                  <strong>Strefa szara</strong> (32.03–41.06 pkt). Klasyfikacja niepewna — tekst wykazuje cechy obu stylów. Zalecana ręczna weryfikacja.
                 </AlertBox>
               )}
-              {!inGrayZone && aiProb > 0.6 && (
+              {!inGrayZone && aiProb > 0.41 && (
                 <AlertBox type="danger">
                   Wysoka wartość wskazuje na styl zbliżony do AI. Wynik nie jest dowodem autorstwa — stanowi wskazówkę do weryfikacji.
                 </AlertBox>
               )}
-              {!inGrayZone && aiProb < 0.3 && (
+              {!inGrayZone && aiProb < 0.32 && (
                 <AlertBox type="info">
                   Znane ograniczenie: prosta narracja epicka (krótkie zdania opisowe, XIX-wieczna proza polska) może mieć niską perplexity mimo ludzkiego autorstwa.
                 </AlertBox>
@@ -230,8 +269,7 @@ export default function Results() {
             </div>
           </Card>
 
-          {/* Karta 2: Profil */}
-          <Card title="📊 Profil stylometryczny">
+          <Card title={<span className="flex items-center gap-1.5"><IconRadar />Profil stylometryczny</span>}>
             <p className="text-xs text-gray-400 mb-3">
               5 znormalizowanych metryk. Im większa powierzchnia — tym bardziej zróżnicowany profil tekstu.
             </p>
@@ -239,13 +277,12 @@ export default function Results() {
               <RadarChart data={radarData}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
-                <Radar name="Tekst" dataKey="value" fill="#4f6ef7" fillOpacity={0.4} stroke="#4f6ef7" />
+                <Radar name="Tekst" dataKey="value" fill="#2d6a4f" fillOpacity={0.35} stroke="#2d6a4f" />
               </RadarChart>
             </ResponsiveContainer>
           </Card>
 
-          {/* Karta 3: Metryki stylometryczne */}
-          <Card title="📈 Metryki stylometryczne">
+          <Card title={<span className="flex items-center gap-1.5"><IconMetrics />Metryki stylometryczne</span>}>
 
             <div className="mb-4">
               <div className="flex items-center justify-between text-sm mb-1">
@@ -260,8 +297,8 @@ export default function Results() {
               </div>
               <div className="flex justify-between text-xs text-gray-400">
                 <span>0 — ubogi</span>
-                <span className={stylometry.ttr < 0.5 ? 'text-yellow-600' : stylometry.ttr > 0.7 ? 'text-green-600' : 'text-gray-500'}>
-                  {stylometry.ttr < 0.5 ? '⚠️ poniżej normy' : stylometry.ttr > 0.7 ? '✅ bogate' : '✓ typowe (0.5–0.7)'}
+                <span className={stylometry.ttr < 0.5 ? 'text-yellow-600' : stylometry.ttr > 0.7 ? 'text-primary-600' : 'text-gray-500'}>
+                  {stylometry.ttr < 0.5 ? 'poniżej normy' : stylometry.ttr > 0.7 ? 'bogate' : 'typowe (0.5–0.7)'}
                 </span>
                 <span>1 — bogaty</span>
               </div>
@@ -276,7 +313,7 @@ export default function Results() {
                 <span className="font-mono font-semibold">{stylometry.lexical_density.toFixed(4)}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-1">
-                <div className="bg-indigo-400 h-2 rounded-full" style={{ width: `${stylometry.lexical_density * 100}%` }} />
+                <div className="bg-primary-400 h-2 rounded-full" style={{ width: `${stylometry.lexical_density * 100}%` }} />
               </div>
               <div className="flex justify-between text-xs text-gray-400">
                 <span>0 — same stopwords</span>
@@ -286,14 +323,14 @@ export default function Results() {
 
             <ProgressBar
               label={<span className="flex items-center">Bogactwo słownikowe (hapax) <InfoTooltip text="Odsetek słów użytych dokładnie raz (hapax legomena) wśród unikalnych słów. Wyższy = większe zróżnicowanie." /></span>}
-              value={stylometry.vocab_richness} color="bg-purple-400"
+              value={stylometry.vocab_richness} color="bg-primary-300"
             />
 
             <div className="grid grid-cols-3 gap-3 mt-4 text-center">
               {[
-                { val: stylometry.word_count, label: 'słów' },
+                { val: stylometry.word_count,     label: 'słów' },
                 { val: stylometry.sentence_count, label: 'zdań' },
-                { val: stylometry.unique_words, label: 'unikatów' },
+                { val: stylometry.unique_words,   label: 'unikatów' },
               ].map(({ val, label }) => (
                 <div key={label} className="bg-gray-50 rounded-lg p-3">
                   <div className="text-xl font-bold text-primary-600">{val.toLocaleString()}</div>
@@ -311,10 +348,10 @@ export default function Results() {
             )}
           </Card>
 
-          {/* Karta 4: LIX */}
           <Card title={
-            <span className="flex items-center gap-1">
-              ✍️ Jakość językowa
+            <span className="flex items-center gap-1.5">
+              <IconQuality />
+              Jakość językowa
               <InfoTooltip text="LIX (Läsbarhetsindex) — wskaźnik czytelności neutralny językowo. Zastąpił Flesch Reading Ease, który jest kalibrowany pod angielski i dawał zaniżone wyniki dla polszczyzny." />
             </span>
           }>
@@ -334,9 +371,9 @@ export default function Results() {
               segments={[
                 { width: 20, color: '#86efac' },
                 { width: 14, color: '#4ade80' },
-                { width: 14, color: '#facc15' },
+                { width: 14, color: '#fbbf24' },
                 { width: 14, color: '#fb923c' },
-                { width: 38, color: '#ef4444' },
+                { width: 38, color: '#f87171' },
               ]}
             />
             <div className="flex justify-between text-xs text-gray-400 mb-4">
@@ -347,7 +384,7 @@ export default function Results() {
               <span>b. trudny</span>
             </div>
 
-            <ProgressBar label="Gęstość interpunkcji" value={quality.punctuation_density} color="bg-yellow-400" />
+            <ProgressBar label="Gęstość interpunkcji" value={quality.punctuation_density} color="bg-amber-400" />
             {quality.long_word_ratio != null && (
               <ProgressBar label="Odsetek długich słów (>6 zn.)" value={quality.long_word_ratio} color="bg-orange-400" />
             )}
@@ -360,11 +397,11 @@ export default function Results() {
             </div>
           </Card>
 
-          {/* Karta 5: N-gramy */}
           {ngramData.length > 0 && (
             <Card title={
-              <span className="flex items-center gap-1">
-                🔠 Najczęstsze bigramy
+              <span className="flex items-center gap-1.5">
+                <IconNgram />
+                Najczęstsze bigramy
                 <InfoTooltip text="Pary słów pojawiające się ≥2 razy. Powtarzające się bigramy mogą wskazywać na szablonowe frazy charakterystyczne dla stylu AI." />
               </span>
             }>
@@ -373,28 +410,28 @@ export default function Results() {
                   <XAxis type="number" tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#4f6ef7" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="count" fill="#2d6a4f" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
               {ngramData[0]?.count > 5 && (
                 <div className="mt-2">
                   <AlertBox type="info">
-                    Bigramm „{ngramData[0].name}" pojawia się {ngramData[0].count} razy. Wysoka częstotliwość może wskazywać na powtarzalne frazy typowe dla stylu AI.
+                    Bigram „{ngramData[0].name}" pojawia się {ngramData[0].count} razy. Wysoka częstotliwość może wskazywać na powtarzalne frazy typowe dla stylu AI.
                   </AlertBox>
                 </div>
               )}
             </Card>
           )}
 
-          {/* Karta 6: Entropia */}
           <Card title={
-            <span className="flex items-center gap-1">
-              🌀 Unikalność tekstu
+            <span className="flex items-center gap-1.5">
+              <IconEntropy />
+              Unikalność tekstu
               <InfoTooltip text="Entropia Shannona — mierzy nieprzewidywalność rozkładu słów. Im wyższa, tym bardziej zróżnicowane i unikalne słownictwo." />
             </span>
           }>
             <div className="text-center mb-3">
-              <div className="text-4xl font-black text-purple-600">{stylometry.entropy.toFixed(3)}</div>
+              <div className="text-4xl font-black text-primary-600">{stylometry.entropy.toFixed(3)}</div>
               <div className="text-sm text-gray-500">Entropia Shannona (bitów)</div>
             </div>
 
@@ -415,26 +452,27 @@ export default function Results() {
 
             <p className="text-sm text-gray-600 text-center">
               {stylometry.entropy < 3
-                ? '⚠️ Bardzo niska entropia — silna powtarzalność słownictwa.'
+                ? 'Bardzo niska entropia — silna powtarzalność słownictwa.'
                 : stylometry.entropy < 5
-                ? '➡️ Umiarkowana entropia — typowy zakres dla prozy narracyjnej.'
-                : '✅ Wysoka entropia — bogate, zróżnicowane słownictwo.'}
+                ? 'Umiarkowana entropia — typowy zakres dla prozy narracyjnej.'
+                : 'Wysoka entropia — bogate, zróżnicowane słownictwo.'}
             </p>
           </Card>
 
         </div>
 
-        {/* Sekcja ograniczeń */}
         <div className="mt-8 border border-gray-200 rounded-xl overflow-hidden">
           <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center gap-2">
-            <span>⚠️</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             <h3 className="font-semibold text-gray-700 text-sm">Znane ograniczenia systemu</h3>
           </div>
           <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600 leading-relaxed">
             <div>
-              <p className="font-semibold text-gray-700 mb-2">Detekcja AI</p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>Skuteczność: AUC = 0.94, dokładność 90% (n=50 tekstów)</li>
+              <p className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">Detekcja AI</p>
+              <ul className="space-y-1.5 list-disc list-inside">
+                <li>Skuteczność: AUC = 0.90, n=80 tekstów (rekalibracja v3)</li>
                 <li>Prosta narracja epicka z krótkimi zdaniami może być błędnie flagowana jako AI — dotyczy XIX-wiecznej prozy polskiej (Reymont, Potop)</li>
                 <li>Teksty AI z nieregularną, emocjonalną składnią mogą być przeoczone</li>
                 <li>Model skalibrowany wyłącznie na polskich tekstach literackich — niesprawdzony na innych gatunkach</li>
@@ -442,8 +480,8 @@ export default function Results() {
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-gray-700 mb-2">Metryki stylometryczne</p>
-              <ul className="space-y-1 list-disc list-inside">
+              <p className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">Metryki stylometryczne</p>
+              <ul className="space-y-1.5 list-disc list-inside">
                 <li>MATTR wiarygodny dla tekstów ≥ 200 słów; przy krótszych wyniki mniej stabilne</li>
                 <li>Gęstość leksykalna opiera się na liście 50 stopwords — niekompletna</li>
                 <li>LIX może niedoszacowywać trudności tekstów z archaizmami</li>
@@ -455,16 +493,14 @@ export default function Results() {
         </div>
 
         <div className="flex flex-wrap gap-4 mt-8 justify-center print-hidden">
-          <Link to="/history" className="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm">
-            📋 Historia analiz
-          </Link>
-          <Link to="/compare" className="px-5 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm">
-            🔍 Porównaj z innym tekstem
+          <Link to="/history" className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+            Historia analiz
           </Link>
         </div>
 
         <div className="hidden mt-8 pt-4 border-t border-gray-300 text-xs text-gray-400 text-center print-show">
-          checkLit – Literary Analyzer · Analiza #{data.id} · {new Date(data.created_at).toLocaleString('pl-PL')} · Model AUC: 0.94
+          checkLit – Literary Analyzer · Analiza #{data.id} · {new Date(data.created_at).toLocaleString('pl-PL')} · Model AUC: 0.90
         </div>
       </div>
     </>

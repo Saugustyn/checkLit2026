@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-"""
-checkLit – Automatyczna ewaluacja live (API)
-Wysyła 30 tekstów do API, zbiera wyniki, porównuje z kluczem,
-generuje raport HTML z tabelami i wykresami.
-
-Użycie:
-    python evaluate_live.py
-    python evaluate_live.py --host http://localhost:8000
-    python evaluate_live.py --delay 1.5   # wolniej jeśli GPU/CPU
-"""
-
 import requests
 import time
 import json
@@ -18,7 +6,6 @@ import sys
 import math
 from datetime import datetime
 
-# ─── Klucz odpowiedzi ────────────────────────────────────────────────────────
 ANSWER_KEY = {
     1:  "human",   # Fikcyjna proza epicka (przypadek graniczny)
     2:  "ai",      # Claude — proza psychologiczna
@@ -423,11 +410,9 @@ bez niego, bez braci, bez tego wszystkiego co minęło —
 i że to jest właściwe, i że nie ma się co smucić.""",
 }
 
-# ─── Opisy trudnych przypadków ───────────────────────────────────────────────
 HARD_CASES = {1: "graniczny — epicka narracja", 5: "AI w stylu wiejskim",
               27: "styl ludowy", 28: "archaiczny (Kochanowski)", 3: "wiersz (Mickiewicz)"}
 
-# ─── Kolory ANSI do terminala ─────────────────────────────────────────────────
 GREEN  = "\033[92m"
 RED    = "\033[91m"
 YELLOW = "\033[93m"
@@ -438,7 +423,6 @@ GRAY   = "\033[90m"
 
 def colored(text, color): return f"{color}{text}{RESET}"
 
-# ─── Wysyłanie do API ────────────────────────────────────────────────────────
 def analyze(host, text, nr):
     url = f"{host}/api/analyze"
     try:
@@ -452,7 +436,6 @@ def analyze(host, text, nr):
         print(colored(f"  ✗ Błąd #{nr}: {e}", RED))
         return None
 
-# ─── Generowanie raportu HTML ────────────────────────────────────────────────
 def generate_html(results, metrics):
     rows = ""
     for r in results:
@@ -487,7 +470,6 @@ def generate_html(results, metrics):
             <td class="mono">{s.get('word_count', '—')}</td>
         </tr>"""
 
-    # Statystyki AI vs Human dla metryk stylometrycznych
     ai_rows = [r for r in results if ANSWER_KEY[r["nr"]] == "ai"]
     human_rows = [r for r in results if ANSWER_KEY[r["nr"]] == "human"]
 
@@ -515,7 +497,6 @@ def generate_html(results, metrics):
             <td class="mono">Δ {diff:.4f} ({diff_pct:.1f}%)</td>
         </tr>"""
 
-    # LIX osobno
     ai_lix = avg(ai_rows, "quality", "lix_score") or avg(ai_rows, "quality", "flesch_score")
     hu_lix = avg(human_rows, "quality", "lix_score") or avg(human_rows, "quality", "flesch_score")
     stats_html += f"""<tr>
@@ -600,7 +581,6 @@ def generate_html(results, metrics):
 </body></html>"""
     return html
 
-# ─── Główna logika ────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="http://localhost:8000")
@@ -616,7 +596,6 @@ def main():
     print(f"  Delay:   {args.delay}s między requestami")
     print(f"{'='*60}\n")
 
-    # Test połączenia
     try:
         requests.get(f"{args.host}/health", timeout=5).raise_for_status()
         print(colored("  ✓ Backend działa\n", GREEN))
@@ -673,7 +652,6 @@ def main():
 
         time.sleep(args.delay)
 
-    # ── Metryki końcowe ──────────────────────────────────────────────────────
     print(f"\n{'─'*60}")
     if not results:
         print(colored("Brak wyników do analizy.", RED))
@@ -700,7 +678,6 @@ def main():
     print(f"  F1 Score:  {colored(f'{f1:.1%}', GREEN if f1 >= 0.8 else YELLOW)}")
     print(f"\n  TP={tp}  TN={tn}  FP={fp}  FN={fn}")
 
-    # Błędne klasyfikacje
     wrong = [r for r in results if not r["correct"]]
     if wrong:
         print(f"\n{BOLD}BŁĘDNE KLASYFIKACJE ({len(wrong)}):{RESET}")
@@ -710,7 +687,6 @@ def main():
             note = f"  ← {HARD_CASES[nr]}" if nr in HARD_CASES else ""
             print(f"  #{nr:02d}: {true_l.upper()} → {r['predicted'].upper()}  (AI prob={r['ai_prob']:.1%}){colored(note, YELLOW)}")
 
-    # Statystyki stylometryczne
     ai_results    = [r for r in results if ANSWER_KEY[r["nr"]] == "ai"]
     human_results = [r for r in results if ANSWER_KEY[r["nr"]] == "human"]
 
@@ -739,7 +715,6 @@ def main():
     hu_lix = avg_val(human_results, "quality", "lix_score") or avg_val(human_results, "quality", "flesch_score")
     print(f"  {'LIX (czytelność)':25}  {ai_lix:10.2f}  {hu_lix:12.2f}  {colored(f'{ai_lix-hu_lix:+.2f}', GREEN)}")
 
-    # Zapis do pliku JSON
     ts_ = datetime.now().isoformat()
     output_json = {
         "timestamp": ts_,
@@ -751,7 +726,6 @@ def main():
         json.dump(output_json, f, ensure_ascii=False, indent=2)
     print(f"\n  ✓ JSON zapisany: {json_path}")
 
-    # Zapis raportu HTML
     html_path = "evaluation_live_report.html"
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(generate_html(results, metrics))

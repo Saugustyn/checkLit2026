@@ -1,7 +1,3 @@
-"""
-Moduł analizy stylometrycznej tekstu literackiego.
-Implementuje metryki: TTR, gęstość leksykalna, entropia, n-gramy.
-"""
 import math
 import string
 from collections import Counter
@@ -32,7 +28,6 @@ def calculate_ttr(tokens: List[str], window: int = 50) -> float:
     if not tokens:
         return 0.0
     if len(tokens) <= window:
-        # za krótki tekst — fallback do zwykłego TTR
         return round(len(set(tokens)) / len(tokens), 4)
     
     scores = [
@@ -105,7 +100,7 @@ def get_top_ngrams(tokens: List[str], n: int = 2, top_k: int = 5) -> list:
     return [
         {"ngram": " ".join(gram), "count": count}
         for gram, count in freq.most_common(top_k)
-        if count >= 2  # jedyna zmiana
+        if count >= 2  
     ]
 
 
@@ -114,9 +109,9 @@ def analyze_stylometry(text: str) -> dict:
     sentences = get_sentences(text)
 
     return {
-        "ttr": calculate_ttr(tokens),              # ← teraz MATTR
+        "ttr": calculate_ttr(tokens),              
         "avg_sentence_length": round(calculate_avg_sentence_length(text), 2),
-        "lexical_density": calculate_lexical_density(tokens, text),  # ← teraz stopwords
+        "lexical_density": calculate_lexical_density(tokens, text), 
         "entropy": calculate_entropy(tokens),
         "vocab_richness": calculate_vocab_richness(tokens),
         "word_count": len(tokens),

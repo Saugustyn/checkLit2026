@@ -7,7 +7,6 @@ const api = axios.create({
   },
 })
 
-// Interceptor do obsługi błędów
 api.interceptors.response.use(
   response => response,
   error => {
@@ -22,11 +21,7 @@ export const getHistory    = ()               => api.get('/history')
 export const compareTexts  = (text_a, text_b) => api.post('/compare', { text_a, text_b })
 export const deleteAnalysis = (id)            => api.delete(`/history/${id}`)
 
-// ─── Eksport i pobieranie ─────────────────────────────────────
 
-/**
- * Pobiera oryginalny tekst analizy jako plik .txt
- */
 export const downloadText = (id) => {
   const link = document.createElement('a')
   link.href = `/api/results/${id}/text`
@@ -34,9 +29,6 @@ export const downloadText = (id) => {
   link.click()
 }
 
-/**
- * Eksportuje pełny raport jako plik .json
- */
 export const exportReportJSON = (id) => {
   const link = document.createElement('a')
   link.href = `/api/results/${id}/export`
@@ -44,10 +36,6 @@ export const exportReportJSON = (id) => {
   link.click()
 }
 
-/**
- * Drukuje / eksportuje raport jako PDF przez okno drukowania przeglądarki.
- * Przed wywołaniem upewnij się, że strona ma odpowiednie style @media print.
- */
 export const exportReportPDF = () => {
   window.print()
 }

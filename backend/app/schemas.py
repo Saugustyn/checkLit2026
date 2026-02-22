@@ -30,10 +30,8 @@ class StylometryResult(BaseModel):
 
 class QualityResult(BaseModel):
     """Wyniki analizy jakości językowej"""
-    # Pola flesch_ zachowane dla kompatybilności (zawierają wartości LIX)
     flesch_score: float
     flesch_label: str
-    # Pola LIX – właściwy wskaźnik dla języka polskiego
     lix_score: float
     lix_label: str
     lix_description: str
@@ -48,7 +46,7 @@ class AIDetectionResult(BaseModel):
     human_probability: float
     label: str
     confidence: str
-    perplexity: Optional[float] = None  # None gdy model niedostępny (fallback)
+    perplexity: Optional[float] = None 
 
 
 class AnalysisResponse(BaseModel):
@@ -60,6 +58,7 @@ class AnalysisResponse(BaseModel):
     ai_detection: AIDetectionResult
     stylometry: StylometryResult
     quality: QualityResult
+    full_text: str
 
 
 class AnalysisListItem(BaseModel):

@@ -10,3 +10,4 @@ torch==2.4.1
 sacremoses
 pypdf>=3.0.0
 python-docx>=1.1.0
+python-docx
