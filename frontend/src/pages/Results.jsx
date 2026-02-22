@@ -13,8 +13,18 @@ const Card = ({ title, children, className = '' }) => (
   </div>
 )
 
+const BAR_COLORS = {
+  'bg-primary-500': '#2d6a4f',
+  'bg-primary-400': '#52b788',
+  'bg-primary-300': '#95d5b2',
+  'bg-red-400':     '#f87171',
+  'bg-red-300':     '#fca5a5',
+  'bg-yellow-400':  '#fbbf24',
+}
+
 const ProgressBar = ({ label, value, max = 1, color = 'bg-primary-500' }) => {
   const pct = Math.min((value / max) * 100, 100)
+  const hex = BAR_COLORS[color] ?? '#2d6a4f'
   return (
     <div className="mb-3">
       <div className="flex justify-between text-sm mb-1">
@@ -22,7 +32,7 @@ const ProgressBar = ({ label, value, max = 1, color = 'bg-primary-500' }) => {
         <span className="font-mono font-semibold">{typeof value === 'number' ? value.toFixed(4) : value}</span>
       </div>
       <div className="w-full bg-gray-100 rounded-full h-2">
-        <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+        <div style={{ width: `${pct}%`, height: "8px", borderRadius: "9999px", backgroundColor: hex, transition: "width 0.3s" }} />
       </div>
     </div>
   )
@@ -168,7 +178,11 @@ export default function Results() {
   const lix = quality.lix_score ?? quality.flesch_score
   const inGrayZone = ai_detection.confidence?.toLowerCase().includes('szara')
 
-  const aiColor = aiProb > 0.41 ? 'text-red-600' : aiProb > 0.32 ? 'text-yellow-600' : 'text-primary-600'
+  const isHuman  = ai_detection.label === 'Human-written'
+  const dispProb  = isHuman ? ai_detection.human_probability : aiProb
+  const dispLabel = isHuman ? 'Tekst ludzki' : 'Tekst AI'
+  const aiColor   = aiProb > 0.41 ? 'text-red-600' : aiProb > 0.32 ? 'text-yellow-600' : 'text-primary-600'
+  const dispColor = isHuman ? 'text-primary-600' : aiColor
 
   const radarData = [
     { metric: 'TTR',          value: stylometry.ttr },
@@ -212,11 +226,11 @@ export default function Results() {
             <span className="flex items-center gap-1.5">
               <IconAI />
               Detekcja AI
-              <InfoTooltip text="Model roberta-base-openai-detector (HuggingFace Transformers). Klasyfikator binarny z rekalibrowanymi progami wyznaczonymi na korpusie 80 tekstów literackich (AUC = 0.90). Próg human: <32, strefa szara: 32–41, AI: >41." />
+              <InfoTooltip text="Model sdadas/polish-gpt2-small (causal LM). Detekcja oparta na perplexity — niskie perplexity wskazuje na przewidywalny styl AI. Progi Youdena wyznaczone na korpusie 80 tekstów literackich (AUC = 0.90): AI < 32.03, szara strefa 32–41, Human > 41.06." />
             </span>
           }>
-            <div className={`text-5xl font-black text-center mb-2 ${aiColor}`}>
-              {(aiProb * 100).toFixed(1)}%
+            <div className={`text-5xl font-black text-center mb-2 ${dispColor}`}>
+              {(dispProb * 100).toFixed(1)}%
             </div>
             <p className="text-center font-semibold text-gray-700 mb-1">{ai_detection.label}</p>
             <p className="text-center text-xs text-gray-400 mb-3">
@@ -238,10 +252,19 @@ export default function Results() {
               <span>AI (&gt;41%)</span>
             </div>
 
-            <ProgressBar label="Prawdopodobieństwo AI" value={aiProb} color={
-              aiProb > 0.41 ? 'bg-red-400' : aiProb > 0.32 ? 'bg-yellow-400' : 'bg-primary-500'
-            } />
-            <ProgressBar label="Prawdopodobieństwo człowieka" value={ai_detection.human_probability} color="bg-primary-300" />
+            {isHuman ? (
+              <>
+                <ProgressBar label="Prawdopodobieństwo człowieka" value={ai_detection.human_probability} color="bg-primary-500" />
+                <ProgressBar label="Prawdopodobieństwo AI"        value={aiProb}                          color="bg-red-300" />
+              </>
+            ) : (
+              <>
+                <ProgressBar label="Prawdopodobieństwo AI"        value={aiProb}                          color={
+                  aiProb > 0.41 ? 'bg-red-400' : aiProb > 0.32 ? 'bg-yellow-400' : 'bg-primary-500'
+                } />
+                <ProgressBar label="Prawdopodobieństwo człowieka" value={ai_detection.human_probability} color="bg-primary-300" />
+              </>
+            )}
 
             {ai_detection.perplexity && (
               <p className="text-xs text-gray-400 mt-1 mb-3">
@@ -293,7 +316,7 @@ export default function Results() {
                 <span className="font-mono font-semibold">{stylometry.ttr.toFixed(4)}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-1">
-                <div className="bg-primary-500 h-2 rounded-full" style={{ width: `${stylometry.ttr * 100}%` }} />
+                <div style={{ width: `${stylometry.ttr * 100}%`, height: "8px", borderRadius: "9999px", backgroundColor: "#2d6a4f" }} />
               </div>
               <div className="flex justify-between text-xs text-gray-400">
                 <span>0 — ubogi</span>
@@ -313,7 +336,7 @@ export default function Results() {
                 <span className="font-mono font-semibold">{stylometry.lexical_density.toFixed(4)}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-1">
-                <div className="bg-primary-400 h-2 rounded-full" style={{ width: `${stylometry.lexical_density * 100}%` }} />
+                <div style={{ width: `${stylometry.lexical_density * 100}%`, height: "8px", borderRadius: "9999px", backgroundColor: "#52b788" }} />
               </div>
               <div className="flex justify-between text-xs text-gray-400">
                 <span>0 — same stopwords</span>
@@ -500,7 +523,7 @@ export default function Results() {
         </div>
 
         <div className="hidden mt-8 pt-4 border-t border-gray-300 text-xs text-gray-400 text-center print-show">
-          checkLit – Literary Analyzer · Analiza #{data.id} · {new Date(data.created_at).toLocaleString('pl-PL')} · Model AUC: 0.90
+          checkLit – Analiza #{data.id} · {new Date(data.created_at).toLocaleString('pl-PL')} · Model AUC: 0.90
         </div>
       </div>
     </>

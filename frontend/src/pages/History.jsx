@@ -24,9 +24,9 @@ export default function History() {
   }
 
   const aiLabel = (prob) => {
-    if (prob > 0.41) return { text: 'AI',       color: 'bg-red-100 text-red-700' }
-    if (prob > 0.32) return { text: 'Wątpliwy', color: 'bg-yellow-100 text-yellow-700' }
-    return              { text: 'Human',     color: 'bg-primary-100 text-primary-700' }
+    if (prob > 0.41) return { text: 'AI',       color: 'bg-red-100 text-red-700',     dispPct: Math.round(prob * 100) }
+    if (prob > 0.32) return { text: 'Wątpliwy', color: 'bg-yellow-100 text-yellow-700', dispPct: Math.round(prob * 100) }
+    return              { text: 'Human',     color: 'bg-primary-100 text-primary-700', dispPct: Math.round((1 - prob) * 100) }
   }
 
   return (
@@ -76,7 +76,7 @@ export default function History() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`px-2 py-1 rounded-md text-xs font-semibold ${label.color}`}>
-                        {label.text} ({(a.ai_probability * 100).toFixed(0)}%)
+                        {label.text} ({label.dispPct}%)
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center font-mono text-gray-600">{a.ttr.toFixed(3)}</td>
