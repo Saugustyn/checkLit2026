@@ -64,9 +64,11 @@ _tokenizer = None
 PERPLEXITY_AI_THRESHOLD    = 32.03
 PERPLEXITY_HUMAN_THRESHOLD = 41.0623
 
-# Parametry sigmoidy
-_SIGMOID_MIDPOINT = (PERPLEXITY_AI_THRESHOLD + PERPLEXITY_HUMAN_THRESHOLD) / 2
-_SIGMOID_K        = 0.15
+# ── Parametry sigmoidy (skalibrowane na rozkładzie v3) ─────────────
+# Midpoint = środek między średnią AI (192.7) a średnią Human (310.4)
+# k = 0.012 daje ciągły rozkład w zakresie 99–677
+_SIGMOID_MIDPOINT = 250.0
+_SIGMOID_K        = 0.012
 
 
 def get_model_and_tokenizer():
