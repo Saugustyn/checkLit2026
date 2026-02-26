@@ -4,21 +4,15 @@ from typing import Optional
 
 
 class AnalysisRequest(BaseModel):
-    """Schemat żądania analizy tekstu"""
     text: str
-
     class Config:
-        json_schema_extra = {
-            "example": {
-                "text": "To jest przykładowy tekst literacki do analizy..."
-            }
-        }
+        json_schema_extra = {"example": {"text": "To jest przykładowy tekst literacki do analizy..."}}
 
 
 class StylometryResult(BaseModel):
-    """Wyniki analizy stylometrycznej"""
     ttr: float
     avg_sentence_length: float
+    sentence_length_std: float = 0.0
     lexical_density: float
     entropy: float
     vocab_richness: float
@@ -29,7 +23,6 @@ class StylometryResult(BaseModel):
 
 
 class QualityResult(BaseModel):
-    """Wyniki analizy jakości językowej"""
     flesch_score: float
     flesch_label: str
     lix_score: float
@@ -41,16 +34,14 @@ class QualityResult(BaseModel):
 
 
 class AIDetectionResult(BaseModel):
-    """Wyniki detekcji AI metodą perplexity (Herbert)"""
     ai_probability: float
     human_probability: float
     label: str
     confidence: str
-    perplexity: Optional[float] = None 
+    perplexity: Optional[float] = None
 
 
 class AnalysisResponse(BaseModel):
-    """Pełna odpowiedź z wynikami analizy"""
     id: int
     created_at: datetime
     text_preview: str
@@ -62,7 +53,6 @@ class AnalysisResponse(BaseModel):
 
 
 class AnalysisListItem(BaseModel):
-    """Element listy historii analiz"""
     id: int
     created_at: datetime
     text_preview: str
@@ -70,19 +60,16 @@ class AnalysisListItem(BaseModel):
     ai_probability: float
     ttr: float
     flesch_score: float
-
     class Config:
         from_attributes = True
 
 
 class CompareRequest(BaseModel):
-    """Schemat żądania porównania dwóch tekstów"""
     text_a: str
     text_b: str
 
 
 class CompareResponse(BaseModel):
-    """Wyniki porównania dwóch tekstów"""
     text_a: StylometryResult
     text_b: StylometryResult
     similarity_score: float

@@ -13,10 +13,24 @@ def tokenize(text: str) -> List[str]:
 
 
 def get_sentences(text: str) -> List[str]:
-    """Podział tekstu na zdania po '.', '!' i '?'."""
+    """
+    Podział tekstu na zdania po '.', '!' i '?'.
+
+    Heurystyka wierszowa: jeśli tekst ma mniej niż jedno zdanie
+    na 40 słów (np. poezja bez kropek na końcu wersu), przełącza się
+    na segmentację po wierszach (liniach).
+    """
     import re
     sentences = re.split(r"[.!?]+", text)
-    return [s.strip() for s in sentences if s.strip()]
+    sentences = [s.strip() for s in sentences if s.strip()]
+
+    word_count = len(text.split())
+    if word_count > 0 and len(sentences) < word_count / 40:
+        verse_lines = [ln.strip() for ln in text.splitlines() if len(ln.strip()) > 5]
+        if len(verse_lines) > len(sentences):
+            return verse_lines
+
+    return sentences
 
 
 def calculate_ttr(tokens: List[str], window: int = 50) -> float:
@@ -29,7 +43,7 @@ def calculate_ttr(tokens: List[str], window: int = 50) -> float:
         return 0.0
     if len(tokens) <= window:
         return round(len(set(tokens)) / len(tokens), 4)
-    
+
     scores = [
         len(set(tokens[i:i + window])) / window
         for i in range(len(tokens) - window + 1)
@@ -44,6 +58,28 @@ def calculate_avg_sentence_length(text: str) -> float:
         return 0.0
     word_counts = [len(s.split()) for s in sentences if s]
     return sum(word_counts) / len(word_counts)
+
+
+def calculate_sentence_length_std(text: str) -> float:
+    """
+    Odchylenie standardowe długości zdań.
+
+    Miara zróżnicowania struktury syntaktycznej tekstu.
+    Teksty XIX-wieczne przeplatają zdania krótkie z rozbudowanymi
+    periodami — daje wysokie STD (~12-18).
+    Teksty XXI-wieczne i teksty generowane przez AI mają bardziej
+    jednorodne zdania — daje niskie STD (~3-7).
+    Wiarygodne dla tekstów zawierających co najmniej 5 zdań.
+    """
+    sentences = get_sentences(text)
+    if len(sentences) < 2:
+        return 0.0
+    lengths = [len(s.split()) for s in sentences if s]
+    if not lengths:
+        return 0.0
+    avg = sum(lengths) / len(lengths)
+    variance = sum((l - avg) ** 2 for l in lengths) / len(lengths)
+    return round(math.sqrt(variance), 4)
 
 
 def calculate_lexical_density(tokens: List[str], text: str) -> float:
@@ -82,7 +118,7 @@ def calculate_entropy(tokens: List[str]) -> float:
 
 def calculate_vocab_richness(tokens: List[str]) -> float:
     """
-    Bogactwo słownikowe (Yule's K uproszczony):
+    Bogactwo słownikowe (hapax legomena ratio):
     stosunek słów używanych raz do wszystkich unikalnych.
     """
     if not tokens:
@@ -100,7 +136,7 @@ def get_top_ngrams(tokens: List[str], n: int = 2, top_k: int = 5) -> list:
     return [
         {"ngram": " ".join(gram), "count": count}
         for gram, count in freq.most_common(top_k)
-        if count >= 2  
+        if count >= 2
     ]
 
 
@@ -109,13 +145,14 @@ def analyze_stylometry(text: str) -> dict:
     sentences = get_sentences(text)
 
     return {
-        "ttr": calculate_ttr(tokens),              
-        "avg_sentence_length": round(calculate_avg_sentence_length(text), 2),
-        "lexical_density": calculate_lexical_density(tokens, text), 
-        "entropy": calculate_entropy(tokens),
-        "vocab_richness": calculate_vocab_richness(tokens),
-        "word_count": len(tokens),
-        "sentence_count": len(sentences),
-        "unique_words": len(set(tokens)),
-        "top_ngrams": get_top_ngrams(tokens, n=2, top_k=5),
+        "ttr":                  calculate_ttr(tokens),
+        "avg_sentence_length":  round(calculate_avg_sentence_length(text), 2),
+        "sentence_length_std":  calculate_sentence_length_std(text),
+        "lexical_density":      calculate_lexical_density(tokens, text),
+        "entropy":              calculate_entropy(tokens),
+        "vocab_richness":       calculate_vocab_richness(tokens),
+        "word_count":           len(tokens),
+        "sentence_count":       len(sentences),
+        "unique_words":         len(set(tokens)),
+        "top_ngrams":           get_top_ngrams(tokens, n=2, top_k=5),
     }
