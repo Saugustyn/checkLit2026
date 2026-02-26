@@ -47,6 +47,23 @@ const MetricRow = ({ label, a, b, tooltip }) => {
   )
 }
 
+const BreakdownBar = ({ label, value }) => {
+  const diffPct = Math.round(value * 100)
+  const simPct  = 100 - diffPct
+  const color = diffPct < 20 ? '#4ade80' : diffPct < 45 ? '#fbbf24' : '#f87171'
+  return (
+    <div className="mb-2">
+      <div className="flex justify-between text-xs mb-0.5">
+        <span className="text-gray-500">{label}</span>
+        <span className="font-mono text-gray-600">{simPct}% zbieżność</span>
+      </div>
+      <div className="w-full bg-gray-100 rounded-full h-1.5">
+        <div style={{ width: `${simPct}%`, height: '6px', borderRadius: '9999px', backgroundColor: color }} />
+      </div>
+    </div>
+  )
+}
+
 const similarityInfo = (score) => {
   if (score >= 0.85) return { label: 'Bardzo wysokie', color: 'text-red-600',     bg: 'bg-red-50 border-red-200',
     desc: 'Teksty są niemal identyczne stylistycznie. Możliwe wspólne autorstwo lub że jeden jest przeróbką drugiego.' }
@@ -155,43 +172,34 @@ const TextSlot = ({ label, labelColor, borderColor, ringColor, value, onChange, 
   )
 }
 
-const arch_extractTextFromFile = async (file) => {
-  const ext = file.name.split('.').pop().toLowerCase()
-  if (ext === 'txt') return await file.text()
-  const formData = new FormData()
-  formData.append('file', file)
-  const res = await axios.post('/api/analyze-file', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-  return res.data.full_text || ''
-}
-
 const extractTextFromFile = async (file) => {
   const ext = file.name.split('.').pop().toLowerCase()
   if (ext === 'txt') return await file.text()
-
   const formData = new FormData()
   formData.append('file', file)
-
   const res = await axios.post('/api/analyze-file', formData)
-
-  const resText = await axios.get(`/api/results/${res.data.id}/text`, {
-    responseType: 'text',
-  })
-
+  const resText = await axios.get(`/api/results/${res.data.id}/text`, { responseType: 'text' })
   return resText.data || ''
 }
 
+const FEATURE_LABELS = {
+  ttr:                 'MATTR (bogactwo lek.)',
+  avg_sentence_length: 'Dł. zdania',
+  lexical_density:     'Gęstość leksykalna',
+  entropy:             'Entropia Shannona',
+  vocab_richness:      'Hapax legomena',
+}
+
 export default function Compare() {
-  const [modeA, setModeA] = useState('text')
-  const [modeB, setModeB] = useState('text')
-  const [textA, setTextA] = useState('')
-  const [textB, setTextB] = useState('')
-  const [fileA, setFileA] = useState(null)
-  const [fileB, setFileB] = useState(null)
+  const [modeA, setModeA]   = useState('text')
+  const [modeB, setModeB]   = useState('text')
+  const [textA, setTextA]   = useState('')
+  const [textB, setTextB]   = useState('')
+  const [fileA, setFileA]   = useState(null)
+  const [fileB, setFileB]   = useState(null)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]   = useState('')
 
   const handleCompare = async () => {
     setError('')
@@ -222,15 +230,20 @@ export default function Compare() {
     { metric: 'Bogactwo',     A: result.text_a.vocab_richness,  B: result.text_b.vocab_richness },
   ] : []
 
-  const simInfo = result ? similarityInfo(result.similarity_score) : null
-  const canCompare = (modeA === 'text' ? textA.length >= 50 : !!fileA) && (modeB === 'text' ? textB.length >= 50 : !!fileB)
+  const simInfo    = result ? similarityInfo(result.similarity_score) : null
+  const breakdown  = result?.similarity_breakdown ?? {}
+  const canCompare = (modeA === 'text' ? textA.length >= 50 : !!fileA) &&
+                     (modeB === 'text' ? textB.length >= 50 : !!fileB)
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Porównaj dwa teksty</h1>
-      <p className="text-gray-500 mb-2">Analiza porównawcza profili stylometrycznych — TTR, entropia, gęstość leksykalna, bogactwo słownikowe.</p>
+      <p className="text-gray-500 mb-2">
+        Analiza porównawcza profili stylometrycznych — TTR, entropia, gęstość leksykalna, bogactwo słownikowe.
+      </p>
       <p className="text-xs text-gray-500 mb-8 bg-primary-50 border border-primary-100 rounded-lg p-3">
-        Porównanie opiera się wyłącznie na cechach stylometrycznych, nie na treści. Wysoki wynik podobieństwa nie jest dowodem tożsamości autorskiej — oznacza zbliżony styl pisania.
+        Porównanie opiera się wyłącznie na cechach stylometrycznych, nie na treści. Wysoki wynik podobieństwa
+        nie jest dowodem tożsamości autorskiej — oznacza zbliżony styl pisania.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
@@ -264,16 +277,32 @@ export default function Compare() {
 
       {result && (
         <div className="mt-10">
+
           <div className={`text-center border rounded-xl p-6 shadow-sm mb-6 ${simInfo.bg}`}>
             <p className="text-gray-500 text-sm mb-1">
               Podobieństwo stylometryczne
-              <InfoTooltip text="Obliczone jako 1 minus średnia znormalizowana różnica 4 metryk: TTR, gęstość leksykalna, entropia, średnia długość zdania." />
+              <InfoTooltip text="Odległość euklidesowa na wektorze 5 znormalizowanych cech (MATTR, dł. zdania, gęstość lex., entropia, hapax). Wagi: MATTR i dł. zdania po 30%, pozostałe po 15%/10%." />
             </p>
-            <div className={`text-5xl font-black ${simInfo.color}`}>{(result.similarity_score * 100).toFixed(1)}%</div>
+            <div className={`text-5xl font-black ${simInfo.color}`}>
+              {(result.similarity_score * 100).toFixed(1)}%
+            </div>
             <p className={`font-semibold mt-1 ${simInfo.color}`}>{simInfo.label}</p>
             <p className="text-gray-500 text-xs mt-2 max-w-md mx-auto">{simInfo.desc}</p>
           </div>
 
+          {Object.keys(breakdown).length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
+              <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">
+                Rozkład różnic per cecha
+                <InfoTooltip text="Zbieżność 100% = identyczna wartość cechy w obu tekstach. Niższe wartości = większa różnica stylistyczna w danym wymiarze." />
+              </h3>
+              {Object.entries(FEATURE_LABELS).map(([key, label]) =>
+                breakdown[key] != null ? (
+                  <BreakdownBar key={key} label={label} value={breakdown[key]} />
+                ) : null
+              )}
+            </div>
+          )}
           <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 text-xs">
             <p className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">Skala podobieństwa</p>
             <div className="space-y-1.5">
@@ -294,6 +323,7 @@ export default function Compare() {
             </div>
           </div>
 
+          {/* === WYKRESY === */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
               <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Profil porównawczy</h3>
@@ -321,23 +351,25 @@ export default function Compare() {
                   </tr>
                 </thead>
                 <tbody>
-                  <MetricRow label="TTR (MATTR)" a={result.text_a.ttr} b={result.text_b.ttr}
+                  <MetricRow label="TTR (MATTR)"    a={result.text_a.ttr}                 b={result.text_b.ttr}
                     tooltip="Moving Average TTR — bogactwo leksykalne, niezależne od długości tekstu." />
-                  <MetricRow label="Gęstość lex." a={result.text_a.lexical_density} b={result.text_b.lexical_density}
+                  <MetricRow label="Gęstość lex."   a={result.text_a.lexical_density}     b={result.text_b.lexical_density}
                     tooltip="Udział słów treściowych (nie-stopwords) wśród wszystkich tokenów." />
-                  <MetricRow label="Entropia" a={result.text_a.entropy} b={result.text_b.entropy}
+                  <MetricRow label="Entropia"       a={result.text_a.entropy}             b={result.text_b.entropy}
                     tooltip="Entropia Shannona — nieprzewidywalność rozkładu słów. Wyższe = bardziej zróżnicowane." />
-                  <MetricRow label="Bogactwo słow." a={result.text_a.vocab_richness} b={result.text_b.vocab_richness}
+                  <MetricRow label="Bogactwo słow." a={result.text_a.vocab_richness}      b={result.text_b.vocab_richness}
                     tooltip="Odsetek słów użytych dokładnie raz (hapax legomena)." />
                   <MetricRow label="Śr. dł. zdania" a={result.text_a.avg_sentence_length} b={result.text_b.avg_sentence_length}
-                    tooltip="Średnia liczba słów w zdaniu." />
+                    tooltip="Średnia liczba słów w zdaniu — jeden z najsilniejszych sygnałów różnicujących styl autora." />
                 </tbody>
               </table>
             </div>
           </div>
 
           <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
-            <strong>Ograniczenie:</strong> Wynik podobieństwa oparty jest wyłącznie na 4 metrykach stylometrycznych. Nie uwzględnia treści, tematyki ani podobieństwa frazowego. Nie stanowi dowodu tożsamości autorskiej.
+            <strong>Ograniczenie:</strong> Wynik podobieństwa oparty jest na 5 metrykach stylometrycznych
+            z wagami empirycznymi. Nie uwzględnia treści, tematyki ani podobieństwa frazowego.
+            Nie stanowi dowodu tożsamości autorskiej.
           </div>
         </div>
       )}

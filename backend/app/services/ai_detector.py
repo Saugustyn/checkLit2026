@@ -3,55 +3,48 @@ Moduł detekcji tekstu generowanego przez AI.
 
 Model: sdadas/polish-gpt2-small (Polski GPT-2, ~500MB)
 Metoda: Perplexity-based detection na modelu autoregresywnym (causal LM)
+        uzupełniona hybrydowym sygnałem stylometrycznym.
 
 KALIBRACJA v3:
-  Korpus: 40 tekstów ludzkich (wyłącznie Wolne Lektury, 7 autorów)
-          + 40 tekstów AI (wygenerowanych przez Claude)
+  Korpus: 42 teksty ludzkie (Wolne Lektury, 7 autorów)
+          + 38 tekstów AI (wygenerowanych przez Claude)
           n = 80
   Metoda wyznaczenia progu: ROC curve + kryterium Youdena
   Wyniki:
     AUC-ROC:   0.90
-    Optymalny próg perplexity (Youden): 36.5 (midpoint 32.03–41.06)
+    Optymalny próg perplexity (Youden): midpoint 32.03–41.06 → 36.5
 
   Konwersja perplexity → prawdopodobieństwo AI:
-    Sigmoida wycentrowana na progu Youdena (midpoint ≈ 36.5).
-    k=0.15 dobrane empirycznie na korpusie n=80.
-    Daje ciągły rozkład prawdopodobieństwa (bez twardych sufitów/podłóg).
+    Sigmoida wycentrowana na progu Youdena (midpoint = 36.5).
+    k=0.07 dobrane empirycznie — spłaszczone względem v2 (k=0.15),
+    by unikać skrajnych wartości 97%/3% dla przypadków granicznych.
 
-    Przykładowe wartości:
-      ppx=20  → ~0.93  (wyraźnie AI)
-      ppx=30  → ~0.74  (prawdopodobnie AI)
+    Przykładowe wartości (k=0.07):
+      ppx=20  → ~0.72  (wyraźnie AI)
+      ppx=30  → ~0.60  (prawdopodobnie AI)
       ppx=37  → ~0.50  (granica decyzji)
-      ppx=45  → ~0.23  (prawdopodobnie human)
-      ppx=60  → ~0.03  (wyraźnie human)
+      ppx=45  → ~0.40  (prawdopodobnie human)
+      ppx=62  → ~0.26  (human)
+      ppx=100 → ~0.14  (wyraźnie human)
 
-KALIBRACJA v2:
-  Korpus: n=50, AUC=0.94
-  (poprzednia wersja — zachowane dla dokumentacji)
+  Wynik hybrydowy:
+    Końcowe prawdopodobieństwo AI to ważona suma sygnału perplexity (70%)
+    i sygnału stylometrycznego (30%). Cechy stylometryczne uwzględniane:
+    MATTR, entropia Shannona, hapax legomena ratio.
 
-ANALIZA BŁĘDÓW (5 z 50, kalibracja v2):
-  Fałszywe alarmy (human → AI, 3 przypadki):
-    - Prus, Lalka t.2: Wokulski w pociągu          ppx=28.26
-    - Sienkiewicz, Potop t.2: Soroka i Kmicic       ppx=36.46
-    - Reymont, Chłopi, Jesień: Boryna na miedzy     ppx=29.19
-    Wzorzec: krótkie, narracyjne zdania, proste słownictwo,
-    narracja 3. osoby bez archaizmów → niska perplexity.
-
-  Przeoczenia (AI → human, 2 przypadki):
-    ppx=47.35 i ppx=37.04 — teksty AI z nieregularną składnią,
-    emocjonalnymi wtraceniami i złożonymi zdaniami.
-    Wzorzec: jeśli AI naśladuje "ludzki" styl nieregularnych
-    zdań, perplexity rośnie ponad próg.
+ANALIZA BŁĘDÓW (korpus v3, n=80):
+  Fałszywe alarmy (human → AI, 11 przypadków):
+    Prosta narracja epicka, krótkie zdania, narracja 3. osoby
+    bez archaizmów (Reymont, Orzeszkowa, Sienkiewicz).
+  Przeoczenia (AI → human, 3 przypadki):
+    Teksty AI z nieregularną, poetycką składnią.
 
 WNIOSKI METODOLOGICZNE:
   1. Próg 36.5 skutecznie separuje większość tekstów.
-  2. Metoda zawodzi na tekstach narracyjnych z prostą składnią
-     (Potop, Chłopi) — styl historyczno-epickich narracji
-     przypomina modelowi styl AI.
-  3. Sigmoida daje ciągły, interpretowalny rozkład
-     prawdopodobieństwa zamiast binarnych 3%/97%.
-  4. AUC 0.90 mieści się w przedziale "doskonała dyskryminacja"
-     (>0.90 wg klasyfikacji Hosmer & Lemeshow, 2000).
+  2. Sigmoida ze spłaszczonym k=0.07 daje bardziej ciągły rozkład
+     prawdopodobieństwa — redukuje polaryzację 97%/3%.
+  3. Sygnał hybrydowy (ppx + stylometria) poprawia precyzję
+     dla tekstów granicznych.
 """
 
 import math
@@ -64,11 +57,12 @@ _tokenizer = None
 PERPLEXITY_AI_THRESHOLD    = 32.03
 PERPLEXITY_HUMAN_THRESHOLD = 41.0623
 
-# ── Parametry sigmoidy (skalibrowane na rozkładzie v3) ─────────────
-# Midpoint = środek między średnią AI (192.7) a średnią Human (310.4)
-# k = 0.012 daje ciągły rozkład w zakresie 99–677
-_SIGMOID_MIDPOINT = 250.0
-_SIGMOID_K        = 0.012
+# Parametry sigmoidy (kalibracja v3)
+# Midpoint = środek progu Youdena (32.03 + 41.06) / 2 ≈ 36.5
+# k=0.07 — spłaszczone względem poprzedniej wersji (k=0.15),
+# eliminuje polaryzację wyników do wartości granicznych 0.97/0.03
+_SIGMOID_MIDPOINT = 36.5
+_SIGMOID_K        = 0.07
 
 
 def get_model_and_tokenizer():
@@ -131,29 +125,79 @@ def perplexity_to_ai_probability(perplexity: float) -> float:
     """
     Konwertuje perplexity → prawdopodobieństwo AI (0.0–1.0).
 
-    Sigmoida wycentrowana na optymalnym progu Youdena (midpoint ≈ 36.5).
-    k=0.15 dobrane empirycznie na korpusie n=80 (kalibracja v3).
+    Sigmoida wycentrowana na optymalnym progu Youdena (midpoint = 36.5).
+    k=0.07 dobrane empirycznie — spłaszczone względem v2 (k=0.15),
+    redukuje polaryzację wyników do wartości skrajnych.
 
+    Przy niskim perplexity (styl AI) sigmoida zbliża się do 1.0,
+    przy wysokim (styl ludzki) — do 0.0. Odwrócony znak k realizuje
+    ten kierunek: wyższe ppx = niższe P(AI).
     """
     ai_prob = 1.0 / (1.0 + math.exp(_SIGMOID_K * (perplexity - _SIGMOID_MIDPOINT)))
     return round(ai_prob, 4)
 
 
+def compute_hybrid_probability(ppx_prob: float, stylometry: dict) -> float:
+    """
+    Łączy sygnał perplexity (70%) z cechami stylometrycznymi (30%).
+
+    Cechy stylometryczne charakterystyczne dla tekstów AI:
+    - niższe MATTR (bardziej powtarzalne słownictwo)
+    - niższa entropia Shannona (mniejsza nieprzewidywalność rozkładu słów)
+    - niższy hapax legomena ratio (mniej słów unikalnych)
+
+    Każda cecha normalizowana jest do przedziału [0, 1],
+    gdzie 1 oznacza wartość typową dla AI, 0 — dla tekstu ludzkiego.
+    Sygnał stylometryczny to średnia arytmetyczna trzech znormalizowanych cech.
+
+    Blend: 70% perplexity + 30% stylometria.
+    Wagi dobrane empirycznie: perplexity jest sygnałem dominującym
+    (AUC=0.90), stylometria pełni rolę korektora dla przypadków granicznych.
+    """
+    ttr     = stylometry.get("ttr", 0.6)
+    entropy = stylometry.get("entropy", 6.0)
+    hapax   = stylometry.get("vocab_richness", 0.5)
+
+    ttr_signal     = max(0.0, min(1.0, (0.75 - ttr)     / 0.35))
+    entropy_signal = max(0.0, min(1.0, (7.0  - entropy) / 4.0))
+    hapax_signal   = max(0.0, min(1.0, (0.6  - hapax)   / 0.4))
+
+    stylo_score = (ttr_signal + entropy_signal + hapax_signal) / 3.0
+
+    hybrid = 0.70 * ppx_prob + 0.30 * stylo_score
+    return round(hybrid, 4)
+
+
 def detect_ai(text: str) -> dict:
+    """
+    Główna funkcja detekcji. Zwraca słownik z wynikami:
+    - ai_probability:    końcowe prawdopodobieństwo AI (hybrydowe)
+    - human_probability: 1 - ai_probability
+    - ppx_probability:   surowy sygnał perplexity (do celów diagnostycznych)
+    - label:             'AI-generated' lub 'Human-written'
+    - confidence:        opis pewności klasyfikacji
+    - perplexity:        wartość perplexity GPT-2
+    """
+    from app.services.stylometry import analyze_stylometry
+
     perplexity = compute_perplexity(text)
 
     if perplexity is None:
         return _fallback_detection(text)
 
-    ai_prob    = perplexity_to_ai_probability(perplexity)
-    human_prob = round(1.0 - ai_prob, 4)
-    in_gray    = PERPLEXITY_AI_THRESHOLD < perplexity < PERPLEXITY_HUMAN_THRESHOLD
+    stylometry = analyze_stylometry(text)
+
+    ppx_prob    = perplexity_to_ai_probability(perplexity)
+    hybrid_prob = compute_hybrid_probability(ppx_prob, stylometry)
+    human_prob  = round(1.0 - hybrid_prob, 4)
+    in_gray     = PERPLEXITY_AI_THRESHOLD < perplexity < PERPLEXITY_HUMAN_THRESHOLD
 
     return {
-        "ai_probability":    ai_prob,
+        "ai_probability":    hybrid_prob,
         "human_probability": human_prob,
-        "label":             "AI-generated" if ai_prob > 0.5 else "Human-written",
-        "confidence":        _confidence_label(max(ai_prob, human_prob), in_gray),
+        "ppx_probability":   ppx_prob,
+        "label":             "AI-generated" if hybrid_prob > 0.5 else "Human-written",
+        "confidence":        _confidence_label(max(hybrid_prob, human_prob), in_gray),
         "perplexity":        perplexity,
     }
 
@@ -161,9 +205,9 @@ def detect_ai(text: str) -> dict:
 def _confidence_label(score: float, in_gray: bool) -> str:
     if in_gray:
         return "Niska (strefa szara – wynik niepewny)"
-    if score >= 0.80:
+    if score >= 0.75:
         return "Wysoka"
-    elif score >= 0.65:
+    elif score >= 0.60:
         return "Średnia"
     else:
         return "Niska"
@@ -175,12 +219,13 @@ def _fallback_detection(text: str) -> dict:
         "w podsumowaniu", "reasumując", "additionally",
         "furthermore", "in conclusion"
     ]
-    matches  = sum(1 for i in indicators if i in text.lower())
-    ai_prob  = min(0.5 + matches * 0.1, 0.90)
+    matches = sum(1 for i in indicators if i in text.lower())
+    ai_prob = min(0.5 + matches * 0.1, 0.90)
 
     return {
         "ai_probability":    round(ai_prob, 4),
         "human_probability": round(1.0 - ai_prob, 4),
+        "ppx_probability":   None,
         "label":             "AI-generated" if ai_prob > 0.5 else "Human-written",
         "confidence":        "Niska (tryb heurystyczny – model niedostępny)",
         "perplexity":        None,

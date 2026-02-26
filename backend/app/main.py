@@ -6,7 +6,7 @@ from app.routers import analysis
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Literary Analyzer API",
+    title="checkLit API",
     description="Platforma do analizy autentyczności i stylu tekstów literackich",
     version="1.0.0"
 )
@@ -24,7 +24,7 @@ app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 
 @app.get("/")
 def root():
-    return {"message": "Literary Analyzer API działa!", "docs": "/docs"}
+    return {"message": "checkLit API działa!", "docs": "/docs"}
 
 
 @app.get("/health")

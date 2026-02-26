@@ -20,6 +20,8 @@ const BAR_COLORS = {
   'bg-red-400':     '#f87171',
   'bg-red-300':     '#fca5a5',
   'bg-yellow-400':  '#fbbf24',
+  'bg-amber-400':   '#fbbf24',
+  'bg-orange-400':  '#fb923c',
 }
 
 const ProgressBar = ({ label, value, max = 1, color = 'bg-primary-500' }) => {
@@ -174,22 +176,24 @@ export default function Results() {
   if (!data)   return null
 
   const { ai_detection, stylometry, quality } = data
-  const aiProb = ai_detection.ai_probability
-  const lix = quality.lix_score ?? quality.flesch_score
+  const aiProb    = ai_detection.ai_probability
+  const ppxProb   = ai_detection.ppx_probability   
+  const lix       = quality.lix_score ?? quality.flesch_score
   const inGrayZone = ai_detection.confidence?.toLowerCase().includes('szara')
 
   const isHuman  = ai_detection.label === 'Human-written'
   const dispProb  = isHuman ? ai_detection.human_probability : aiProb
   const dispLabel = isHuman ? 'Tekst ludzki' : 'Tekst AI'
-  const aiColor   = aiProb > 0.41 ? 'text-red-600' : aiProb > 0.32 ? 'text-yellow-600' : 'text-primary-600'
+  const aiColor   = aiProb > 0.5 ? 'text-red-600' : aiProb > 0.4 ? 'text-yellow-600' : 'text-primary-600'
   const dispColor = isHuman ? 'text-primary-600' : aiColor
+
 
   const radarData = [
     { metric: 'TTR',          value: stylometry.ttr },
     { metric: 'Gęstość lex.', value: stylometry.lexical_density },
-    { metric: 'Entropia',     value: stylometry.entropy / 6 },
+    { metric: 'Entropia',     value: stylometry.entropy / 10 },  
     { metric: 'Bogactwo',     value: stylometry.vocab_richness },
-    { metric: 'Czytelność',   value: lix / 100 },
+    { metric: 'Czytelność',   value: Math.min(lix / 100, 1) },
   ]
   const ngramData = stylometry.top_ngrams.map(n => ({ name: n.ngram, count: n.count }))
 
@@ -226,7 +230,7 @@ export default function Results() {
             <span className="flex items-center gap-1.5">
               <IconAI />
               Detekcja AI
-              <InfoTooltip text="Model sdadas/polish-gpt2-small (causal LM). Detekcja oparta na perplexity — niskie perplexity wskazuje na przewidywalny styl AI. Progi Youdena wyznaczone na korpusie 80 tekstów literackich (AUC = 0.90): AI < 32.03, szara strefa 32–41, Human > 41.06." />
+              <InfoTooltip text="Wynik hybrydowy: 70% sygnał perplexity modelu Polish GPT-2 + 30% cechy stylometryczne (MATTR, entropia, hapax). Progi Youdena wyznaczone na korpusie 80 tekstów literackich (AUC = 0.90)." />
             </span>
           }>
             <div className={`text-5xl font-black text-center mb-2 ${dispColor}`}>
@@ -260,17 +264,25 @@ export default function Results() {
             ) : (
               <>
                 <ProgressBar label="Prawdopodobieństwo AI"        value={aiProb}                          color={
-                  aiProb > 0.41 ? 'bg-red-400' : aiProb > 0.32 ? 'bg-yellow-400' : 'bg-primary-500'
+                  aiProb > 0.5 ? 'bg-red-400' : aiProb > 0.4 ? 'bg-yellow-400' : 'bg-primary-500'
                 } />
                 <ProgressBar label="Prawdopodobieństwo człowieka" value={ai_detection.human_probability} color="bg-primary-300" />
               </>
             )}
 
             {ai_detection.perplexity && (
-              <p className="text-xs text-gray-400 mt-1 mb-3">
-                Perplexity GPT-2: <span className="font-mono font-semibold">{ai_detection.perplexity}</span>
-                <InfoTooltip text="Strefa szara: 32.03–41.06 pkt. Poniżej 32.03 → AI z wysoką pewnością. Powyżej 41.06 → tekst ludzki (progi wyznaczone metodą Youdena na ROC, n=80)." />
-              </p>
+              <div className="mt-1 mb-3 space-y-0.5">
+                <p className="text-xs text-gray-400">
+                  Perplexity GPT-2: <span className="font-mono font-semibold">{ai_detection.perplexity}</span>
+                  <InfoTooltip text="Surowa wartość perplexity modelu Polish GPT-2. Poniżej 32.03 → AI, strefa szara 32–41, powyżej 41.06 → Human (progi Youdena, n=80)." />
+                </p>
+                {ppxProb != null && (
+                  <p className="text-xs text-gray-400">
+                    Sygnał perplexity: <span className="font-mono font-semibold">{(ppxProb * 100).toFixed(1)}%</span>
+                    <InfoTooltip text="Surowy sygnał detekcji oparty wyłącznie na perplexity, przed blendowaniem ze stylometrią. Wynik końcowy to 70% tego sygnału + 30% cech stylometrycznych." />
+                  </p>
+                )}
+              </div>
             )}
 
             <div className="space-y-2">
@@ -279,14 +291,14 @@ export default function Results() {
                   <strong>Strefa szara</strong> (32.03–41.06 pkt). Klasyfikacja niepewna — tekst wykazuje cechy obu stylów. Zalecana ręczna weryfikacja.
                 </AlertBox>
               )}
-              {!inGrayZone && aiProb > 0.41 && (
+              {!inGrayZone && aiProb > 0.5 && (
                 <AlertBox type="danger">
                   Wysoka wartość wskazuje na styl zbliżony do AI. Wynik nie jest dowodem autorstwa — stanowi wskazówkę do weryfikacji.
                 </AlertBox>
               )}
               {!inGrayZone && aiProb < 0.32 && (
                 <AlertBox type="info">
-                  Znane ograniczenie: prosta narracja epicka (krótkie zdania opisowe, XIX-wieczna proza polska) może mieć niską perplexity mimo ludzkiego autorstwa.
+                  Znane ograniczenie: prosta narracja epicka (krótkie zdania opisowe, XIX-wieczna proza polska) może mieć niskie perplexity mimo ludzkiego autorstwa.
                 </AlertBox>
               )}
             </div>
@@ -450,7 +462,7 @@ export default function Results() {
             <span className="flex items-center gap-1.5">
               <IconEntropy />
               Unikalność tekstu
-              <InfoTooltip text="Entropia Shannona — mierzy nieprzewidywalność rozkładu słów. Im wyższa, tym bardziej zróżnicowane i unikalne słownictwo." />
+              <InfoTooltip text="Entropia Shannona — mierzy nieprzewidywalność rozkładu słów. Typowy zakres dla polskiej prozy: 6–9 bitów. Im wyższa, tym bardziej zróżnicowane słownictwo." />
             </span>
           }>
             <div className="text-center mb-3">
@@ -459,12 +471,12 @@ export default function Results() {
             </div>
 
             <ScaleBar
-              currentValue={Math.min(stylometry.entropy, 8)}
-              max={8}
+              currentValue={Math.min(stylometry.entropy, 10)}
+              max={10}
               segments={[
-                { width: 37, color: '#fca5a5' },
-                { width: 25, color: '#fde68a' },
-                { width: 38, color: '#86efac' },
+                { width: 30, color: '#fca5a5' },
+                { width: 20, color: '#fde68a' },
+                { width: 50, color: '#86efac' },
               ]}
             />
             <div className="flex justify-between text-xs text-gray-400 mb-4">
@@ -496,9 +508,10 @@ export default function Results() {
               <p className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">Detekcja AI</p>
               <ul className="space-y-1.5 list-disc list-inside">
                 <li>Skuteczność: AUC = 0.90, n=80 tekstów (rekalibracja v3)</li>
-                <li>Prosta narracja epicka z krótkimi zdaniami może być błędnie flagowana jako AI — dotyczy XIX-wiecznej prozy polskiej (Reymont, Potop)</li>
+                <li>Wynik hybrydowy: 70% perplexity GPT-2 + 30% stylometria</li>
+                <li>Prosta narracja epicka z krótkimi zdaniami może być błędnie flagowana jako AI — dotyczy XIX-wiecznej prozy polskiej</li>
                 <li>Teksty AI z nieregularną, emocjonalną składnią mogą być przeoczone</li>
-                <li>Model skalibrowany wyłącznie na polskich tekstach literackich — niesprawdzony na innych gatunkach</li>
+                <li>Model skalibrowany wyłącznie na polskich tekstach literackich</li>
                 <li><strong>Wynik jest wskazówką, nie dowodem autorstwa.</strong></li>
               </ul>
             </div>
@@ -509,7 +522,7 @@ export default function Results() {
                 <li>Gęstość leksykalna opiera się na liście 50 stopwords — niekompletna</li>
                 <li>LIX może niedoszacowywać trudności tekstów z archaizmami</li>
                 <li>N-gramy wymagają min. 2 wystąpień — krótkie teksty mogą nie zwracać wyników</li>
-                <li>Entropia: wartości 3–5 bitów to typowy zakres prozy polskiej</li>
+                <li>Entropia: wartości 6–9 bitów to typowy zakres polskiej prozy literackiej</li>
               </ul>
             </div>
           </div>

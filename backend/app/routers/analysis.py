@@ -14,6 +14,7 @@ from app.services.stylometry import analyze_stylometry
 from app.services.nlp_service import analyze_quality
 from app.services.ai_detector import detect_ai
 from app.services.file_parser import extract_text
+from app.services.compare_service import compute_stylometric_similarity
 
 router = APIRouter()
 
@@ -143,24 +144,21 @@ def get_result(analysis_id: int, db: Session = Depends(get_db)):
 
 @router.post("/compare", response_model=CompareResponse)
 def compare_texts(request: CompareRequest):
-    """Porównuje dwa teksty stylometrycznie."""
+    """
+    Porównanie stylometryczne dwóch tekstów.
+    Podobieństwo obliczane metodą odległości euklidesowej (v2)
+    na wektorze 5 znormalizowanych cech z wagami.
+    """
     result_a = analyze_stylometry(request.text_a)
     result_b = analyze_stylometry(request.text_b)
 
-    metrics = ["ttr", "avg_sentence_length", "lexical_density", "entropy"]
-    diffs = []
-    for m in metrics:
-        a_val = result_a.get(m, 0)
-        b_val = result_b.get(m, 0)
-        max_val = max(abs(a_val), abs(b_val), 0.001)
-        diffs.append(abs(a_val - b_val) / max_val)
-
-    similarity = round(1.0 - (sum(diffs) / len(diffs)), 4)
+    sim_result = compute_stylometric_similarity(result_a, result_b)
 
     return CompareResponse(
         text_a=StylometryResult(**result_a),
         text_b=StylometryResult(**result_b),
-        similarity_score=max(0.0, min(1.0, similarity))
+        similarity_score=sim_result["similarity"],
+        similarity_breakdown=sim_result["breakdown"],   
     )
 
 

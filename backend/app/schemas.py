@@ -86,3 +86,4 @@ class CompareResponse(BaseModel):
     text_a: StylometryResult
     text_b: StylometryResult
     similarity_score: float
+    similarity_breakdown: dict = {}
