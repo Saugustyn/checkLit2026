@@ -1,6 +1,3 @@
-# checkLit – Uruchomienie backendu i frontendu
-# Uruchom: .\start.ps1
-
 $ErrorActionPreference = "Stop"
 $BackendPath  = Join-Path $PSScriptRoot "backend"
 $FrontendPath = Join-Path $PSScriptRoot "frontend"
@@ -11,10 +8,9 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  checkLit - Uruchamianie serwisow..."  -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-# ── [0/2] Ubijanie starych procesów ──────────────────────────────────────────
+# [0/2] Czyszczenie starych procesow
 Write-Host "`n[0/2] Czyszcze stare procesy..." -ForegroundColor Magenta
 
-# Ubij uvicorn (backend) na porcie 8000
 $uvicorn = Get-Process -Name "python" -ErrorAction SilentlyContinue | Where-Object {
     $_.CommandLine -like "*uvicorn*" -or $_.MainWindowTitle -like "*BACKEND*"
 }
@@ -23,37 +19,34 @@ if ($uvicorn) {
     Write-Host "  Zatrzymano: uvicorn (backend)" -ForegroundColor DarkGray
 }
 
-# Ubij procesy trzymające port 8000
 $port8000 = netstat -ano | Select-String ":8000 " | ForEach-Object {
     ($_ -split "\s+")[-1]
 } | Select-Object -Unique
-foreach ($pid in $port8000) {
-    if ($pid -match "^\d+$" -and $pid -ne "0") {
+foreach ($procId in $port8000) {
+    if ($procId -match "^\d+$" -and $procId -ne "0") {
         try {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-            Write-Host "  Zatrzymano PID $pid (port 8000)" -ForegroundColor DarkGray
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+            Write-Host "  Zatrzymano PID $procId (port 8000)" -ForegroundColor DarkGray
         } catch {}
     }
 }
 
-# Ubij node/vite (frontend) na porcie 5173
 $port5173 = netstat -ano | Select-String ":5173 " | ForEach-Object {
     ($_ -split "\s+")[-1]
 } | Select-Object -Unique
-foreach ($pid in $port5173) {
-    if ($pid -match "^\d+$" -and $pid -ne "0") {
+foreach ($procId in $port5173) {
+    if ($procId -match "^\d+$" -and $procId -ne "0") {
         try {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-            Write-Host "  Zatrzymano PID $pid (port 5173)" -ForegroundColor DarkGray
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+            Write-Host "  Zatrzymano PID $procId (port 5173)" -ForegroundColor DarkGray
         } catch {}
     }
 }
 
-# Chwila na zwolnienie portów
 Start-Sleep -Seconds 1
 Write-Host "  Porty 8000 i 5173 zwolnione." -ForegroundColor DarkGray
 
-# ── Walidacja venv ────────────────────────────────────────────────────────────
+# Walidacja venv
 if (-not (Test-Path $VenvPython)) {
     Write-Host "`n[ERR] Nie znaleziono venv w backend\venv" -ForegroundColor Red
     Write-Host "Utworz venv i zainstaluj zaleznosci:" -ForegroundColor Yellow
@@ -63,7 +56,7 @@ if (-not (Test-Path $VenvPython)) {
     exit 1
 }
 
-# ── [1/2] Backend ─────────────────────────────────────────────────────────────
+# [1/2] Backend
 Write-Host "`n[1/2] Uruchamiam backend (http://localhost:8000)..." -ForegroundColor Yellow
 $BackendCmd = @"
 cd `"$BackendPath`";
@@ -74,7 +67,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", 
 
 Start-Sleep -Seconds 2
 
-# ── [2/2] Frontend ────────────────────────────────────────────────────────────
+# [2/2] Frontend
 Write-Host "[2/2] Uruchamiam frontend (http://localhost:5173)..." -ForegroundColor Yellow
 $FrontendCmd = @"
 cd `"$FrontendPath`";

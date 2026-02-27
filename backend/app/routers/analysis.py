@@ -1,3 +1,4 @@
+import re
 import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import PlainTextResponse, JSONResponse
@@ -19,6 +20,24 @@ from app.services.compare_service import compute_stylometric_similarity
 router = APIRouter()
 
 
+def compute_lix(text: str) -> float:
+    """
+    Wskaźnik czytelności LIX (Läsbarhetsindex).
+    LIX = (liczba_słów / liczba_zdań) + (liczba_długich_słów * 100 / liczba_słów)
+    Długie słowo = więcej niż 6 znaków (litery).
+    Im wyższe LIX, tym trudniejszy tekst. Skala: <25 bardzo łatwy, >55 bardzo trudny.
+    """
+    sentences = [s.strip() for s in re.split(r'[.!?…]+', text) if s.strip()]
+    words = re.findall(r'\b[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\b', text)
+
+    n_sentences = max(len(sentences), 1)
+    n_words = max(len(words), 1)
+    n_long = sum(1 for w in words if len(w) > 6)
+
+    lix = (n_words / n_sentences) + (n_long * 100 / n_words)
+    return round(lix, 2)
+
+
 def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
 
     if len(text) < 50:
@@ -36,9 +55,13 @@ def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
     stylometry_result = analyze_stylometry(text)
     quality_result    = analyze_quality(text)
 
+    # Uzupełnij LIX jeśli nlp_service go nie zwraca
+    if not quality_result.get("lix"):
+        quality_result["lix"] = compute_lix(text)
+
     db_analysis = Analysis(
         text_preview=text[:500],
-        full_text=text,                         
+        full_text=text,
         text_length=len(text),
         ai_probability=ai_result["ai_probability"],
         ttr=stylometry_result["ttr"],
@@ -48,9 +71,9 @@ def run_analysis_pipeline(text: str, db: Session) -> AnalysisResponse:
         flesch_score=quality_result["flesch_score"],
         vocab_richness=stylometry_result["vocab_richness"],
         full_results=json.dumps({
-            "ai": ai_result,
+            "ai":         ai_result,
             "stylometry": stylometry_result,
-            "quality": quality_result
+            "quality":    quality_result
         }, ensure_ascii=False)
     )
     db.add(db_analysis)
@@ -78,7 +101,6 @@ def analyze_text(request: AnalysisRequest, db: Session = Depends(get_db)):
     return run_analysis_pipeline(request.text.strip(), db)
 
 
-
 @router.post("/analyze-file", response_model=AnalysisResponse)
 async def analyze_file(
     file: UploadFile = File(...),
@@ -87,8 +109,7 @@ async def analyze_file(
     """
     Przyjmuje plik .txt, .pdf lub .docx, ekstrahuje z niego tekst
     i przeprowadza pełną analizę.
-
-    Limit: 10MB na plik (~10+ stron A4 w PDF).
+    Limit: 10 MB na plik.
     """
     MAX_SIZE = 10 * 1024 * 1024
     content = await file.read()
@@ -96,7 +117,7 @@ async def analyze_file(
     if len(content) > MAX_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"Plik jest zbyt duży ({len(content) // 1024}KB). Maksymalny rozmiar: 10MB."
+            detail=f"Plik jest zbyt duży ({len(content) // 1024} KB). Maksymalny rozmiar: 10 MB."
         )
 
     try:
@@ -105,7 +126,6 @@ async def analyze_file(
         raise HTTPException(status_code=422, detail=str(e))
 
     return run_analysis_pipeline(text, db)
-
 
 
 @router.get("/history", response_model=list[AnalysisListItem])
@@ -148,27 +168,30 @@ def compare_texts(request: CompareRequest):
     result_a = analyze_stylometry(request.text_a)
     result_b = analyze_stylometry(request.text_b)
 
-    # ── Zakresy empiryczne (skalibrowane na polskich tekstach literackich) ──
-    # Wyznaczone na podstawie rozkładu metryk w evaluate_checklit.py
+    # ── Zakresy empiryczne ────────────────────────────────────────────────────
+    # Skalibrowane na 50 polskich tekstach literackich (ewaluacja luty 2026):
+    #   25 tekstów ludzkich (Wolne Lektury, oświecenie–dwudziestolecie)
+    #   25 tekstów AI (Claude/GPT-4, różne gatunki)
     # lo = 5. percentyl, hi = 95. percentyl obserwowanych wartości
     METRIC_RANGES = {
-        # nazwa:             (lo,   hi)    # zakres realny z ewaluacji
-        "ttr":               (0.82, 0.95), # obs: 0.842–0.943
-        "lexical_density":   (0.54, 0.80), # obs: 0.562–0.788
-        "entropy":           (6.60, 7.35), # obs: 6.68–7.29
-        "avg_sentence_length":(7.0, 28.0), # obs: szeroki zakres
-        "sentence_length_std":(2.0, 18.0), # obs: AI~5, human~9-14
-        "vocab_richness":    (0.78, 0.95), # obs: 0.82–0.943
+        # metryka:              (lo,   hi)
+        "ttr":                 (0.76, 0.95),  # obs: 0.764–0.954
+        "lexical_density":     (0.53, 0.82),  # obs: 0.534–0.816
+        "entropy":             (6.01, 6.65),  # obs: 6.01–6.65
+        "avg_sentence_length": (7.0,  28.0),  # obs: szeroki zakres
+        "sentence_length_std": (2.0,  18.0),  # obs: AI≈4, human≈9–14
+        "vocab_richness":      (0.76, 0.95),  # obs: 0.764–0.954
     }
 
-    # ── Wagi oparte na d-prime z ewaluacji ──────────────────────────────────
+    # ── Wagi oparte na d-prime z ewaluacji (50 tekstów) ─────────────────────
+    # Wyższe d' → lepsza separacja AI vs human → wyższa waga
     WEIGHTS = {
-        "sentence_length_std": 3.0,  # d'=1.83 — najlepszy separator
-        "lexical_density":     2.5,  # d'=2.28 — dobry separator
-        "vocab_richness":      2.0,  # d'=2.48 — dobry (ale kierunek odwr.)
-        "ttr":                 1.5,  # d'=2.10 — dobry (ale kierunek odwr.)
-        "avg_sentence_length": 1.5,  # d'=0.93 — umiarkowany
-        "entropy":             0.5,  # d'=0.20 — słaby
+        "sentence_length_std": 4.0,  # d'=2.75 — najlepszy separator
+        "lexical_density":     3.0,  # d'=2.52 — bardzo dobry separator
+        "ttr":                 1.5,  # d'=0.83
+        "vocab_richness":      1.5,  # d'=0.69
+        "avg_sentence_length": 1.0,  # d'=0.93
+        "entropy":             0.5,  # d'=0.62 — słaby separator
     }
 
     # ── Obliczenie podobieństwa ──────────────────────────────────────────────
@@ -181,18 +204,17 @@ def compare_texts(request: CompareRequest):
         b_val = result_b.get(metric, 0)
         span  = hi - lo
 
-        # Normalizacja różnicy do [0, 1] względem realnego zakresu
+        # Normalizacja różnicy do [0, 1] względem empirycznego zakresu
         norm_diff = min(abs(a_val - b_val) / span, 1.0)
 
-        # Potęgowanie 0.65: amplifikuje małe różnice
-        # (diff=0.10 → 0.10^0.65 = 0.22; diff=0.30 → 0.30^0.65 = 0.46)
+        # Wykładnik 0.65 amplifikuje małe różnice
+        # (0.10 → 0.22, 0.30 → 0.46, 1.00 → 1.00)
         amplified_diff = norm_diff ** 0.65
 
         w = WEIGHTS.get(metric, 1.0)
         weighted_diff_sum += amplified_diff * w
         total_weight      += w
 
-        # Zbieżność per metrykę (do wyświetlenia w UI)
         per_metric_sim[metric] = round(1.0 - amplified_diff, 4)
 
     avg_diff   = weighted_diff_sum / total_weight if total_weight > 0 else 0.0
@@ -203,7 +225,6 @@ def compare_texts(request: CompareRequest):
         text_b=StylometryResult(**result_b),
         similarity_score=similarity,
     )
-
 
 
 @router.delete("/history/{analysis_id}")
@@ -254,15 +275,15 @@ def export_report(analysis_id: int, db: Session = Depends(get_db)):
 
     report = {
         "meta": {
-            "id": analysis.id,
-            "created_at": analysis.created_at.isoformat(),
-            "text_length": analysis.text_length,
-            "platform": "checkLit – Literary Analyzer",
+            "id":           analysis.id,
+            "created_at":   analysis.created_at.isoformat(),
+            "text_length":  analysis.text_length,
+            "platform":     "checkLit – Literary Analyzer",
         },
         "text_preview": analysis.text_preview,
         "ai_detection": full["ai"],
-        "stylometry": full["stylometry"],
-        "quality": full["quality"],
+        "stylometry":   full["stylometry"],
+        "quality":      full["quality"],
     }
 
     return JSONResponse(

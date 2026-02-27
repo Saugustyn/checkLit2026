@@ -1,0 +1,11 @@
+pair,id_a,id_b,expected,similarity_pct,ok,mattr_a,mattr_b,ld_a,ld_b,entropy_a,entropy_b,avg_sl_a,avg_sl_b,std_sl_a,std_sl_b,vocab_a,vocab_b
+"human (Reymont, jesień) vs. AI (opis zimy)",h16,ai21,NISKIE,54.8,True,0.9137,0.9263,0.6415,0.7377,6.397,6.472,27.2,17.7,15.12,6.5,0.8901,0.88
+"human (Prus, Lalka) vs. AI (portret postaci)",h07,ai02,NISKIE,61.1,False,0.9233,0.954,0.6261,0.7353,6.314,6.305,13.0,14.6,10.42,2.97,0.8444,0.8471
+"human (Żeromski, Judym) vs. AI (opis Krakowa)",h14,ai05,NISKIE,40.0,True,0.7822,0.8545,0.5804,0.7788,6.063,6.096,16.1,13.0,15.62,3.2,0.8537,0.8375
+Prus (Lalka) vs. Orzeszkowa (Nad Niemnem),h07,h09,SREDNIE,86.0,False,0.9233,0.9124,0.6261,0.6346,6.314,6.309,13.0,17.5,10.42,10.14,0.8444,0.8488
+Mickiewicz (rom.) vs. Schulz (dw.międzywojenneie),h03,h19,SREDNIE,45.4,True,0.9302,0.901,0.7636,0.6239,6.506,6.277,36.7,18.2,16.21,7.06,0.8854,0.8864
+Żeromski vs. Reymont (obaj: Młoda Polska),h14,h16,SREDNIE,56.2,True,0.7822,0.9137,0.5804,0.6415,6.063,6.397,16.1,27.2,15.62,15.12,0.8537,0.8901
+AI esej (klimat) vs. AI esej (edukacja),ai04,ai11,WYSOKIE,74.0,True,0.9067,0.9049,0.7431,0.7193,6.344,6.367,15.6,19.0,5.15,5.69,0.8182,0.9158
+AI opis przyrody vs. AI opowiadanie,ai01,ai10,WYSOKIE,70.8,True,0.9167,0.9038,0.6727,0.7699,6.28,6.356,14.0,12.6,4.47,2.59,0.875,0.8587
+"human (Norwid, esej) vs. AI (esej o czasie)",h05,ai23,NISKIE,50.4,True,0.8753,0.9249,0.6111,0.7281,6.311,6.413,16.0,16.3,10.86,3.1,0.8523,0.9167
+human (Sienkiewicz) vs. AI (analiza Wokulski),h11,ai18,NISKIE,59.7,False,0.9232,0.8943,0.625,0.7156,6.448,6.373,22.6,15.6,6.34,2.77,0.8617,0.8901

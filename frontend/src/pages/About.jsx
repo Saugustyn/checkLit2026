@@ -59,11 +59,11 @@ export default function About() {
           {[
             {
               label: 'Detekcja AI',
-              desc: <>Model <code className="bg-gray-100 px-1 rounded text-xs">roberta-base-openai-detector</code> (HuggingFace Transformers). Klasyfikator binarny z rekalibrowanymi progami na własnym korpusie 80 tekstów (AUC = 0.90): <span className="text-primary-700 font-medium">human &lt; 32</span>, <span className="text-yellow-700 font-medium">strefa szara 32–41</span>, <span className="text-red-700 font-medium">AI &gt; 41</span>.</>,
+              desc: <>Model <code className="bg-gray-100 px-1 rounded text-xs">sdadas/polish-gpt2-small</code> — metoda perplexity (im niższa perplexity, tym bardziej regularny i przewidywalny tekst, typowy dla AI). Progi skalibrowane na własnym korpusie 80 tekstów (AUC = 0.90): <span className="text-red-700 font-medium">AI: ppx &lt; 32</span>, <span className="text-yellow-700 font-medium">strefa szara 32–41</span>, <span className="text-primary-700 font-medium">ludzki: ppx &gt; 41</span>.</>,
             },
             {
-              label: 'Type-Token Ratio (TTR)',
-              desc: 'Stosunek liczby unikalnych słów do wszystkich słów. Miara bogactwa leksykalnego tekstu.',
+              label: 'MATTR (Moving-Average Type-Token Ratio)',
+              desc: 'Ruchomy współczynnik type-token — miara bogactwa leksykalnego obliczana w oknie przesuwnym, odporna na wpływ długości tekstu.',
             },
             {
               label: 'Entropia Shannona',
