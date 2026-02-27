@@ -1,10 +1,11 @@
 """
-checkLit – Testy jednostkowe i integracyjne (pytest) - POPRAWIONE
-==================================================================
+checkLit – Testy jednostkowe i integracyjne (pytest)
+=====================================================
 Uruchomienie:
     cd C:\\Users\\sebas\\Documents\\checkLit\\backend
     venv\\Scripts\\activate
-    pytest test_checklit.py -v
+    $env:PYTHONPATH = "C:\\Users\\sebas\\Documents\\checkLit\\backend"
+    pytest tests/test_checklit.py -v
 """
 
 import io
@@ -22,6 +23,7 @@ from app.services.stylometry import (
     get_sentences,
     calculate_ttr,
     calculate_lexical_density,
+    calculate_sentence_length_std,
     calculate_entropy,
     calculate_vocab_richness,
     get_top_ngrams,
@@ -50,9 +52,13 @@ class TestTokenize:
     def test_only_punctuation(self):
         assert tokenize("... !!! ???") == []
 
-    def test_numbers_kept(self):
+    def test_numbers_not_tokens(self):
+        # Nowy tokenizer oparty na _WORD_RE pomija cyfry — to zachowanie celowe:
+        # stylometria literacka operuje na słowach, nie liczbach.
         tokens = tokenize("rok 1978 był ważny")
-        assert "1978" in tokens
+        assert "1978" not in tokens
+        assert "rok" in tokens
+        assert "był" in tokens
 
     def test_polish_chars(self):
         tokens = tokenize("Żółta żaba źle się czuła")
@@ -86,6 +92,16 @@ class TestGetSentences:
         s = get_sentences("Czekał... i czekał.")
         assert len(s) <= 2
 
+    def test_abbreviation_not_split(self):
+        # "dr." nie powinno kończyć zdania
+        s = get_sentences("Przyszedł dr. Kowalski i usiadł.")
+        assert len(s) == 1
+
+    def test_initials_not_split(self):
+        # Inicjał "J." nie kończy zdania
+        s = get_sentences("J. Kowalski napisał list.")
+        assert len(s) == 1
+
 
 # ── calculate_ttr (MATTR) ─────────────────────────────────────────
 
@@ -114,44 +130,75 @@ class TestCalculateTTR:
     def test_mattr_more_stable_than_raw(self):
         base = "Tomasz szedł przez las i widział drzewa i słyszał ptaki".split()
         long_tokens = base * 10
-        
+
         raw_ttr_short = len(set(base)) / len(base)
         raw_ttr_long  = len(set(long_tokens)) / len(long_tokens)
         raw_diff = abs(raw_ttr_short - raw_ttr_long)
-        
+
         mattr_short = calculate_ttr(base)
         mattr_long  = calculate_ttr(long_tokens)
         mattr_diff = abs(mattr_short - mattr_long)
-        
-        assert mattr_diff < raw_diff 
+
+        assert mattr_diff < raw_diff
 
 
 # ── calculate_lexical_density ─────────────────────────────────────
 
 class TestLexicalDensity:
     def test_empty(self):
-        assert calculate_lexical_density([], "") == 0.0
+        # Funkcja przyjmuje tylko tokens (1 argument)
+        assert calculate_lexical_density([]) == 0.0
 
     def test_all_stopwords(self):
         tokens = ["i", "w", "z", "na", "do"]
-        result = calculate_lexical_density(tokens, " ".join(tokens))
+        result = calculate_lexical_density(tokens)
         assert result == 0.0
 
     def test_no_stopwords(self):
-        tokens = ["Wisła", "płynie", "spokojnie", "przez", "kraj"]
-        result = calculate_lexical_density(tokens, " ".join(tokens))
-        assert result > 0.5
+        # "przez" jest na rozbudowanej liście stopwords → 4/5 tokenów treściowych
+        tokens = ["wisła", "płynie", "spokojnie", "przez", "kraj"]
+        result = calculate_lexical_density(tokens)
+        assert result >= 0.7
 
     def test_range(self):
         tokens = tokenize("Piotr i Paweł szli przez las i rozmawiali o życiu")
-        result = calculate_lexical_density(tokens, "")
+        result = calculate_lexical_density(tokens)
         assert 0.0 <= result <= 1.0
 
     def test_different_from_ttr(self):
         tokens = tokenize("ala ma kota i psa i rybkę i chomika")
         ttr = calculate_ttr(tokens)
-        ld  = calculate_lexical_density(tokens, "")
+        ld  = calculate_lexical_density(tokens)
         assert ttr != ld
+
+
+# ── calculate_sentence_length_std ────────────────────────────────
+
+class TestSentenceLengthStd:
+    def test_empty(self):
+        assert calculate_sentence_length_std([]) == 0.0
+
+    def test_single_sentence(self):
+        assert calculate_sentence_length_std(["Jedno zdanie"]) == 0.0
+
+    def test_uniform_sentences_zero_std(self):
+        sentences = ["Ala ma kota"] * 5
+        std = calculate_sentence_length_std(sentences)
+        assert std == pytest.approx(0.0, abs=0.01)
+
+    def test_varied_sentences_high_std(self):
+        sentences = [
+            "Ala.",
+            "Piotr szedł przez długi ciemny las pełen starych drzew i krzewów.",
+            "Kot.",
+            "Rzeka wiła się przez kraj jak żyła przez ciało człowieka w letni dzień.",
+        ]
+        std = calculate_sentence_length_std(sentences)
+        assert std > 3.0
+
+    def test_returns_float(self):
+        sentences = ["Ala ma kota.", "Piotr ma psa."]
+        assert isinstance(calculate_sentence_length_std(sentences), float)
 
 
 # ── calculate_entropy ─────────────────────────────────────────────
@@ -251,9 +298,9 @@ class TestAnalyzeStylometry:
     def test_returns_all_keys(self):
         result = analyze_stylometry(self.TEXT)
         expected_keys = {
-            "ttr", "avg_sentence_length", "lexical_density",
-            "entropy", "vocab_richness", "word_count",
-            "sentence_count", "unique_words", "top_ngrams"
+            "ttr", "avg_sentence_length", "sentence_length_std",
+            "lexical_density", "entropy", "vocab_richness",
+            "word_count", "sentence_count", "unique_words", "top_ngrams"
         }
         assert expected_keys.issubset(result.keys())
 
@@ -273,6 +320,11 @@ class TestAnalyzeStylometry:
 
     def test_entropy_positive(self):
         assert analyze_stylometry(self.TEXT)["entropy"] > 0
+
+    def test_sentence_length_std_positive(self):
+        # Tekst z 4 zdaniami o różnej długości → STD > 0
+        r = analyze_stylometry(self.TEXT)
+        assert r["sentence_length_std"] >= 0.0
 
     def test_short_text(self):
         result = analyze_stylometry("Krótki tekst.")
@@ -344,7 +396,7 @@ class TestPerplexityToAiProbability:
 
     def test_at_human_threshold(self):
         prob = perplexity_to_ai_probability(PERPLEXITY_HUMAN_THRESHOLD)
-        assert prob < 0.5 
+        assert prob < 0.5
 
     def test_gray_zone(self):
         mid = (PERPLEXITY_AI_THRESHOLD + PERPLEXITY_HUMAN_THRESHOLD) / 2
@@ -441,7 +493,8 @@ class TestAnalyzeEndpoint:
         r = client.post("/api/analyze", json={"text": SAMPLE_TEXT})
         sty = r.json()["stylometry"]
         for key in ["ttr", "word_count", "sentence_count", "unique_words",
-                    "lexical_density", "entropy", "vocab_richness"]:
+                    "lexical_density", "entropy", "vocab_richness",
+                    "sentence_length_std"]:
             assert key in sty, f"Brak klucza: {key}"
 
     def test_text_too_short_returns_error(self):

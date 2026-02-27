@@ -144,22 +144,66 @@ def get_result(analysis_id: int, db: Session = Depends(get_db)):
 
 @router.post("/compare", response_model=CompareResponse)
 def compare_texts(request: CompareRequest):
-    """
-    Porównanie stylometryczne dwóch tekstów.
-    Podobieństwo obliczane metodą odległości euklidesowej (v2)
-    na wektorze 5 znormalizowanych cech z wagami.
-    """
+    """Porównuje dwa teksty stylometrycznie."""
     result_a = analyze_stylometry(request.text_a)
     result_b = analyze_stylometry(request.text_b)
 
-    sim_result = compute_stylometric_similarity(result_a, result_b)
+    # ── Zakresy empiryczne (skalibrowane na polskich tekstach literackich) ──
+    # Wyznaczone na podstawie rozkładu metryk w evaluate_checklit.py
+    # lo = 5. percentyl, hi = 95. percentyl obserwowanych wartości
+    METRIC_RANGES = {
+        # nazwa:             (lo,   hi)    # zakres realny z ewaluacji
+        "ttr":               (0.82, 0.95), # obs: 0.842–0.943
+        "lexical_density":   (0.54, 0.80), # obs: 0.562–0.788
+        "entropy":           (6.60, 7.35), # obs: 6.68–7.29
+        "avg_sentence_length":(7.0, 28.0), # obs: szeroki zakres
+        "sentence_length_std":(2.0, 18.0), # obs: AI~5, human~9-14
+        "vocab_richness":    (0.78, 0.95), # obs: 0.82–0.943
+    }
+
+    # ── Wagi oparte na d-prime z ewaluacji ──────────────────────────────────
+    WEIGHTS = {
+        "sentence_length_std": 3.0,  # d'=1.83 — najlepszy separator
+        "lexical_density":     2.5,  # d'=2.28 — dobry separator
+        "vocab_richness":      2.0,  # d'=2.48 — dobry (ale kierunek odwr.)
+        "ttr":                 1.5,  # d'=2.10 — dobry (ale kierunek odwr.)
+        "avg_sentence_length": 1.5,  # d'=0.93 — umiarkowany
+        "entropy":             0.5,  # d'=0.20 — słaby
+    }
+
+    # ── Obliczenie podobieństwa ──────────────────────────────────────────────
+    weighted_diff_sum = 0.0
+    total_weight      = 0.0
+    per_metric_sim    = {}
+
+    for metric, (lo, hi) in METRIC_RANGES.items():
+        a_val = result_a.get(metric, 0)
+        b_val = result_b.get(metric, 0)
+        span  = hi - lo
+
+        # Normalizacja różnicy do [0, 1] względem realnego zakresu
+        norm_diff = min(abs(a_val - b_val) / span, 1.0)
+
+        # Potęgowanie 0.65: amplifikuje małe różnice
+        # (diff=0.10 → 0.10^0.65 = 0.22; diff=0.30 → 0.30^0.65 = 0.46)
+        amplified_diff = norm_diff ** 0.65
+
+        w = WEIGHTS.get(metric, 1.0)
+        weighted_diff_sum += amplified_diff * w
+        total_weight      += w
+
+        # Zbieżność per metrykę (do wyświetlenia w UI)
+        per_metric_sim[metric] = round(1.0 - amplified_diff, 4)
+
+    avg_diff   = weighted_diff_sum / total_weight if total_weight > 0 else 0.0
+    similarity = round(max(0.0, min(1.0, 1.0 - avg_diff)), 4)
 
     return CompareResponse(
         text_a=StylometryResult(**result_a),
         text_b=StylometryResult(**result_b),
-        similarity_score=sim_result["similarity"],
-        similarity_breakdown=sim_result["breakdown"],   
+        similarity_score=similarity,
     )
+
 
 
 @router.delete("/history/{analysis_id}")
